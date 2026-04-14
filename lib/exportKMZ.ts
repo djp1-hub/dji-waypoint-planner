@@ -2,6 +2,7 @@
 // KMZ is a ZIP archive containing template.kml and waylines.wpml
 import JSZip from 'jszip';
 import { Mission, Waypoint, CameraAction } from './types';
+import { getDroneEnumValue } from './droneEnumMap';
 
 /** Calculate the average waypoint speed for a mission (fallback: 5 m/s) */
 function calcAvgSpeed(mission: Mission): number {
@@ -10,7 +11,7 @@ function calcAvgSpeed(mission: Mission): number {
 }
 
 /** Generate the template.kml content for a mission */
-function generateTemplateKML(mission: Mission): string {
+function generateTemplateKML(mission: Mission, droneEnumValue: number): string {
   const avgSpeed = calcAvgSpeed(mission);
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -23,7 +24,7 @@ function generateTemplateKML(mission: Mission): string {
       <wpml:executeRCLostAction>hover</wpml:executeRCLostAction>
       <wpml:globalTransitionalSpeed>${avgSpeed.toFixed(1)}</wpml:globalTransitionalSpeed>
       <wpml:droneInfo>
-        <wpml:droneEnumValue>67</wpml:droneEnumValue>
+        <wpml:droneEnumValue>${droneEnumValue}</wpml:droneEnumValue>
         <wpml:droneSubEnumValue>0</wpml:droneSubEnumValue>
       </wpml:droneInfo>
       <wpml:payloadInfo>
@@ -174,10 +175,13 @@ ${placemarks}
 }
 
 /** Export a mission as a .kmz file and trigger browser download */
-export async function exportKMZ(mission: Mission): Promise<void> {
+export async function exportKMZ(mission: Mission, droneName?: string): Promise<void> {
   if (mission.waypoints.length === 0) {
     throw new Error('Mise nemá žádné waypointy');
   }
+
+  // Resolve droneEnumValue from active drone profile (fallback: 67 = DJI Mini 4 Pro)
+  const droneEnumValue = getDroneEnumValue(droneName);
 
   const zip = new JSZip();
 
@@ -185,7 +189,7 @@ export async function exportKMZ(mission: Mission): Promise<void> {
   const wpmz = zip.folder('wpmz');
   if (!wpmz) throw new Error('Failed to create wpmz folder');
 
-  wpmz.file('template.kml', generateTemplateKML(mission));
+  wpmz.file('template.kml', generateTemplateKML(mission, droneEnumValue));
   wpmz.file('waylines.wpml', generateWaylinesWPML(mission));
 
   // Generate the ZIP blob and trigger download

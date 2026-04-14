@@ -141,7 +141,6 @@ function LayersControl() {
               markerCount++;
             }
           });
-          console.log('[compass] Markers found:', markerCount, '| Bounds valid:', bounds.isValid());
           if (bounds.isValid() && markerCount > 0) {
             map.fitBounds(bounds, { padding: [80, 80], maxZoom: 17 });
           } else {

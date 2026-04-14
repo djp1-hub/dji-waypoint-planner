@@ -69,6 +69,9 @@ export default function Preview3DPage() {
   const tilesetRef = useRef<any>(null);        // OSM Buildings tileset
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const googleTilesetRef = useRef<any>(null);  // Google Photorealistic 3D Tiles
+  // Ref to camera.changed handler so it can be removed in cleanup (prevents stale setHeading calls)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cameraChangedHandlerRef = useRef<any>(null);
 
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState<string>('Načítám Cesium...');
@@ -172,9 +175,10 @@ export default function Preview3DPage() {
 
         viewerRef.current = viewer;
 
-        // Hide Cesium commercial-use watermark via CSS
+        // Style Cesium credit container — must remain visible per Cesium ToS
         const creditContainer = viewer.cesiumWidget.creditContainer as HTMLElement;
-        creditContainer.style.display = 'none';
+        creditContainer.style.fontSize = '10px';
+        creditContainer.style.opacity = '0.6';
 
         // 5. OSM Buildings — free 3D buildings from Cesium ion (always load as fallback)
         try {
@@ -279,10 +283,12 @@ export default function Preview3DPage() {
         // Rotating compass: update heading state whenever camera orientation changes.
         // heading = 0 means camera points north; rotating right increases heading.
         // The SVG compass rotates by -heading so north always points up on screen.
-        viewer.camera.changed.addEventListener(() => {
+        // Store the handler in a ref so it can be removed in the cleanup function.
+        cameraChangedHandlerRef.current = () => {
           const h = Cesium.Math.toDegrees(viewer.camera.heading);
           setHeading(h);
-        });
+        };
+        viewer.camera.changed.addEventListener(cameraChangedHandlerRef.current);
 
         setMapReady(true);
 
@@ -293,7 +299,13 @@ export default function Preview3DPage() {
     })();
 
     return () => {
-      viewer?.destroy();
+      // Remove camera listener before destroying the viewer to prevent
+      // setHeading calls on an already-unmounted component.
+      if (viewerRef.current?.camera?.changed && cameraChangedHandlerRef.current) {
+        viewerRef.current.camera.changed.removeEventListener(cameraChangedHandlerRef.current);
+        cameraChangedHandlerRef.current = null;
+      }
+      viewerRef.current?.destroy();
       viewerRef.current = null;
       tilesetRef.current = null;
       googleTilesetRef.current = null;

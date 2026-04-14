@@ -14,17 +14,13 @@ import { encodeMission, decodeMission } from '@/lib/shareUrl';
 import { importKmz } from '@/lib/importKmz';
 import { checkWaypointCollisions, Collision } from '@/lib/collisionDetection';
 import { loadActiveDrone } from '@/lib/profileStore';
-
+import { generateId } from '@/lib/panelUtils';
 
 // Leaflet map must be loaded client-side only (it uses browser APIs)
 const MapView = dynamic(() => import('@/components/Map'), { ssr: false });
 
 /** Shot types available in film mode */
 export type FilmType = 'dronie' | 'reveal' | 'topdown' | 'craneup' | 'hyperlapse' | 'arcshot' | 'boomerang' | 'rocket' | 'poisequence';
-
-function generateId(): string {
-  return `wp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
 
 export default function HomePage() {
   const router = useRouter();
@@ -162,6 +158,32 @@ export default function HomePage() {
     }
     // Remove the ?mission= param so the URL stays clean
     window.history.replaceState({}, '', window.location.pathname);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Load mission from /missions page — runs once on mount ───────
+  // When user clicks "Načíst" on /missions, the mission is stored in
+  // sessionStorage under 'loadMission'. This effect reads and applies it.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('loadMission');
+      if (!raw) return;
+      sessionStorage.removeItem('loadMission'); // clear immediately to prevent re-load on refresh
+      const mission: Mission = JSON.parse(raw);
+      if (!mission?.waypoints?.length) return;
+      setWaypoints(mission.waypoints);
+      const isFilm = mission.type === 'film';
+      setMissionType(isFilm ? 'waypoints' : mission.type);
+      setAppMode(isFilm ? 'film' : 'photo');
+      setTerrainActive(false);
+      setOriginalWaypoints(null);
+      // Fly to centroid of loaded waypoints
+      const avgLat = mission.waypoints.reduce((s, wp) => s + wp.lat, 0) / mission.waypoints.length;
+      const avgLng = mission.waypoints.reduce((s, wp) => s + wp.lng, 0) / mission.waypoints.length;
+      setFlyToTarget({ lat: avgLat, lng: avgLng, zoom: 15 });
+    } catch {
+      // Ignore corrupted sessionStorage data
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -385,7 +407,7 @@ export default function HomePage() {
     if (missionType === 'waypoints' || (missionType === 'facade' && facadeMode === '360')) {
       setWaypoints((prev) => [
         ...prev,
-        { id: generateId(), lat, lng, height: 50, speed: 5, waitTime: 0, cameraAction: 'none' },
+        { id: generateId('wp', 0), lat, lng, height: 50, speed: 5, waitTime: 0, cameraAction: 'none' },
       ]);
     }
   }, [
@@ -535,7 +557,7 @@ export default function HomePage() {
         waypoints,
         ...(missionType === 'orbit' && poi ? { poi } : {}),
       };
-      await exportKMZ(mission);
+      await exportKMZ(mission, activeDrone?.name);
     } catch (error) {
       console.error('KMZ export failed:', error);
       alert('Export se nezdaril. Zkontroluj konzoli.');

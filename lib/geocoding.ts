@@ -35,9 +35,7 @@ interface NominatimResult {
 /**
  * Search for addresses matching the given query string.
  * Currently powered by Nominatim (OpenStreetMap) — free, no API key required.
- *
- * TODO: pro komerční provoz vyměnit za Mapy.cz API
- *       nebo Mapbox – stačí změnit tuto funkci.
+ * For commercial use, swap this function for Mapy.cz or Mapbox (see file header).
  *
  * @param query - Address or place name to search for
  * @returns Up to 5 matching results, filtered to Czech Republic

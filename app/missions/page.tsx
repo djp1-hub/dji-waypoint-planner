@@ -38,9 +38,9 @@ export default function MissionsPage() {
           href="/"
           className="text-gray-400 hover:text-white transition-colors text-sm"
         >
-          ← Zpet na mapu
+          ← Zpět na mapu
         </Link>
-        <h1 className="text-white font-bold">Ulozene mise</h1>
+        <h1 className="text-white font-bold">Uložené mise</h1>
       </header>
 
       {/* Mission list */}

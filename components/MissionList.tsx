@@ -6,10 +6,10 @@ import { Mission, MissionType } from '@/lib/types';
 /** Human-readable labels for mission types */
 const MISSION_TYPE_LABELS: Record<MissionType, string> = {
   waypoints: 'Waypointy',
-  spiral: 'Spirala',
+  spiral: 'Spirála',
   grid: 'Grid',
   orbit: 'Orbit',
-  facade: 'Fasada',
+  facade: 'Fasáda',
   film: 'Film',
 };
 
@@ -23,8 +23,8 @@ export default function MissionList({ missions, onLoad, onDelete }: MissionListP
   if (missions.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
-        <p className="text-lg mb-2">Zadne ulozene mise</p>
-        <p className="text-sm">Uloz svoji prvni misi z hlavni stranky.</p>
+        <p className="text-lg mb-2">Žádné uložené mise</p>
+        <p className="text-sm">Ulož svoji první misi z hlavní stránky.</p>
       </div>
     );
   }
@@ -40,7 +40,7 @@ export default function MissionList({ missions, onLoad, onDelete }: MissionListP
             <h3 className="text-white font-medium truncate">{mission.name}</h3>
             <div className="flex gap-3 mt-1 text-xs text-gray-500">
               <span>{MISSION_TYPE_LABELS[mission.type]}</span>
-              <span>{mission.waypoints.length} bodu</span>
+              <span>{mission.waypoints.length} bodů</span>
               <span>{new Date(mission.createdAt).toLocaleDateString('cs-CZ')}</span>
             </div>
           </div>
@@ -49,7 +49,7 @@ export default function MissionList({ missions, onLoad, onDelete }: MissionListP
               onClick={() => onLoad(mission)}
               className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
             >
-              Nacist
+              Načíst
             </button>
             <button
               onClick={() => {

@@ -13,37 +13,37 @@ const STEPS: Step[] = [
     number: 1,
     title: 'Exportuj KMZ soubor',
     description:
-      'V hlavni aplikaci nastav waypoints a klikni na "Exportovat KMZ". Soubor se stahne do slozky Stazene (Downloads) na tvojem pocitaci.',
+      'V hlavní aplikaci nastav waypointy a klikni na „Exportovat KMZ". Soubor se stáhne do složky Stažené (Downloads) na tvém počítači.',
   },
   {
     number: 2,
-    title: 'Vytvor dummy misi v DJI Fly',
+    title: 'Vytvoř dummy misi v DJI Fly',
     description:
-      'Na RC 2 otevri aplikaci DJI Fly. Vytvor novou prazdnou misi (napr. jednim waypoint) a uloz ji. Tato mise bude nahrazena tou exportovanou.',
+      'Na RC 2 otevři aplikaci DJI Fly. Vytvoř novou prázdnou misi (např. jedním waypointem) a ulož ji. Tato mise bude nahrazena tou exportovanou.',
   },
   {
     number: 3,
-    title: 'Pripoj RC 2 k pocitaci',
+    title: 'Připoj RC 2 k počítači',
     description:
-      'Pripoj DJI RC 2 k pocitaci pomoci USB-C datoveho kabelu (ne nabijeci). Na RC 2 potvrdte povoleni pristupu k souborum, pokud se zobrazi dialog.',
+      'Připoj DJI RC 2 k počítači pomocí USB-C datového kabelu (ne nabíjecího). Na RC 2 potvrďte povolení přístupu k souborům, pokud se zobrazí dialog.',
   },
   {
     number: 4,
-    title: 'Najdi slozku waypoint',
+    title: 'Najdi složku waypoint',
     description:
-      'V pruzkumiku Windows naviguj do: Internal storage → Android → data → dji.go.v5 → files → waypoint',
+      'V průzkumníku Windows naviguj do: Internal storage → Android → data → dji.go.v5 → files → waypoint',
   },
   {
     number: 5,
-    title: 'Nahrad KMZ soubor',
+    title: 'Nahraď KMZ soubor',
     description:
-      'Najdi slozku dummy mise (nejnovejsi datum). Uvnitr naleznes .kmz soubor s nahodnym nazvem. Zkopiruj exportovany .kmz soubor do teto slozky a ZACHOVEJ puvodni nazev souboru (jen nahrad obsah, neprejmenuj).',
+      'Najdi složku dummy mise (nejnovější datum). Uvnitř nalezneš .kmz soubor s náhodným názvem. Zkopíruj exportovaný .kmz soubor do této složky a ZACHOVEJ původní název souboru (jen nahraď obsah, nepřejmenuj).',
   },
   {
     number: 6,
-    title: 'Otevri misi v DJI Fly',
+    title: 'Otevři misi v DJI Fly',
     description:
-      'Odpoj USB kabel a otevri DJI Fly na RC 2. Prejdi do sekce misii a otevri dummy misi. Trasa by mela odpovidat tvym waypointum. Pred letem vzdy zkontroluj vysky a trasu!',
+      'Odpoj USB kabel a otevři DJI Fly na RC 2. Přejdi do sekce misií a otevři dummy misi. Trasa by měla odpovídat tvým waypointům. Před letem vždy zkontroluj výšky a trasu!',
   },
 ];
 
@@ -56,17 +56,17 @@ export default function GuidePage() {
           href="/"
           className="text-gray-400 hover:text-white transition-colors text-sm"
         >
-          ← Zpet na mapu
+          ← Zpět na mapu
         </Link>
-        <h1 className="text-white font-bold">Navod: Prenos mise do DJI RC 2</h1>
+        <h1 className="text-white font-bold">Návod: Přenos mise do DJI RC 2</h1>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
         {/* Info box */}
         <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-4 mb-8">
           <p className="text-blue-300 text-sm">
-            DJI Mini 4 Pro nepodporuje prime nahravani misii pres aplikaci. Tento postup
-            umozni nahrat misi pres nahrazeni souboru v ulozisti RC 2.
+            DJI Mini 4 Pro nepodporuje přímé nahrávání misí přes aplikaci. Tento postup
+            umožní nahrát misi přes nahrazení souboru v úložišti RC 2.
           </p>
         </div>
 
@@ -97,10 +97,10 @@ export default function GuidePage() {
 
         {/* Warning */}
         <div className="mt-8 bg-yellow-900/30 border border-yellow-700 rounded-lg p-4">
-          <p className="text-yellow-300 text-sm font-semibold mb-1">Dulezite upozorneni</p>
+          <p className="text-yellow-300 text-sm font-semibold mb-1">Důležité upozornění</p>
           <p className="text-yellow-200/80 text-sm">
-            Vzdy zkontroluj trasu a vysky pred vzletem. Ujisti se, ze letova oblast je
-            v souladu s platnou legislativou a neni v zakazu letani (CTR, TRA apod.).
+            Vždy zkontroluj trasu a výšky před vzletem. Ujisti se, že letová oblast je
+            v souladu s platnou legislativou a není v zákazu létání (CTR, TRA apod.).
           </p>
         </div>
       </main>

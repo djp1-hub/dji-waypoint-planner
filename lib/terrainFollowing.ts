@@ -1,6 +1,6 @@
 // Terrain Following — abstraction layer for elevation data
 // Current implementation: Open-Meteo Elevation API (free, no API key, ~90m SRTM resolution)
-// TODO: for offline use or higher precision, consider Mapbox Terrain API or local SRTM tiles
+// For higher precision or offline use, consider Mapbox Terrain API or local SRTM tiles.
 
 const OPEN_METEO_URL = 'https://api.open-meteo.com/v1/elevation';
 const BATCH_SIZE = 100; // Open-Meteo accepts max 100 points per request

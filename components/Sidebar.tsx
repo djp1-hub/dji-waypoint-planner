@@ -287,6 +287,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showCollisionPanel, setShowCollisionPanel] = useState(false);
+  const [preview3dError, setPreview3dError] = useState<string | null>(null);
 
   // Derive banner color from highest severity in current collisions
   const topSeverity = highestSeverity(collisions);
@@ -526,21 +527,30 @@ export default function Sidebar({
           />
           <button
             onClick={() => {
-              // Store mission data in localStorage so the new tab can read it
-              localStorage.setItem(
-                'preview3d-mission',
-                JSON.stringify({
-                  waypoints,
-                  missionType,
-                  timestamp: Date.now(),
-                }),
-              );
-              window.open('/preview-3d', '_blank');
+              // Store mission data in localStorage so the new tab can read it.
+              // localStorage.setItem can throw QuotaExceededError in private browsing.
+              try {
+                localStorage.setItem(
+                  'preview3d-mission',
+                  JSON.stringify({
+                    waypoints,
+                    missionType,
+                    timestamp: Date.now(),
+                  }),
+                );
+                setPreview3dError(null);
+                window.open('/preview-3d', '_blank');
+              } catch {
+                setPreview3dError('Nelze otevřít 3D náhled – zkus vypnout soukromé prohlížení.');
+              }
             }}
             className="w-full py-1.5 bg-[#0f1117] text-gray-300 text-xs rounded border border-gray-600 hover:border-purple-500 hover:text-white transition-colors"
           >
             🔭 3D náhled
           </button>
+          {preview3dError && (
+            <p className="text-xs text-red-400 mt-1">{preview3dError}</p>
+          )}
         </div>
       )}
 

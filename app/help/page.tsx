@@ -944,7 +944,7 @@ export default function HelpPage() {
         <section id="sdileni-baterie" className={sectionClass}>
           <h2 className={h2Class}>Sdílení mise</h2>
           <p className="text-gray-400 text-sm leading-relaxed mb-4">
-            Tlačítko <span className="text-white font-medium">🔗</span> vedle „Ulozit misi"
+            Tlačítko <span className="text-white font-medium">🔗</span> vedle „Uložit misi"
             zkopíruje odkaz do schránky. Odkaz obsahuje celou misi zakódovanou přímo v URL —
             příjemce ji otevře v prohlížeči bez nutnosti přenosu souborů.
           </p>

@@ -330,14 +330,14 @@ export default function FacadePanel({
             }`}
           >
             {drawStep === 'idle'
-              ? (facadePoints ? 'Zmenit fasadu' : 'Vybrat fasadu')
+              ? (facadePoints ? 'Změnit fasádu' : 'Vybrat fasádu')
               : drawStep === 'a'
-              ? 'Klikni na levy kraj (A)...'
-              : 'Klikni na pravy kraj (B)...'}
+              ? 'Klikni na levý kraj (A)...'
+              : 'Klikni na pravý kraj (B)...'}
           </button>
           {facadePoints && (
             <p className="mt-1 text-gray-600 text-xs">
-              Pokud je nahled za budovou, zkus prohodit poradi kliknuti A↔B.
+              Pokud je náhled za budovou, zkus prohodit pořadí kliknutí A↔B.
             </p>
           )}
         </div>
@@ -350,11 +350,11 @@ export default function FacadePanel({
             Rohy budovy: <span className="text-white">{Math.min(waypoints.length, 4)} / 4</span>
           </p>
           <p className="text-gray-600 text-xs leading-relaxed">
-            Klikni 4 rohy budovy na mapě dokola (po nebo proti smeru hodin). Body lze presouvat tazenim.
+            Klikni 4 rohy budovy na mapě dokola (po nebo proti směru hodin). Body lze přesouvat tažením.
           </p>
           {waypoints.length > 4 && (
             <p className="mt-2 text-yellow-500 text-xs">
-              Pouzivam prvni 4 body jako rohy. Ostatni jsou ignorovany.
+              Používám první 4 body jako rohy. Ostatní jsou ignorovány.
             </p>
           )}
         </div>
@@ -363,25 +363,25 @@ export default function FacadePanel({
       {/* Parameters — shared by both modes */}
       <div className="grid grid-cols-2 gap-2">
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Vzdalenost (m)</label>
+          <label className="text-gray-500 text-xs">Vzdálenost (m)</label>
           <input type="number" value={params.distance} min={2} max={100}
             onChange={(e) => set('distance', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Prekryv (%)</label>
+          <label className="text-gray-500 text-xs">Překryv (%)</label>
           <input type="number" value={params.overlap} min={30} max={90}
             onChange={(e) => set('overlap', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Vyska startu (m)</label>
+          <label className="text-gray-500 text-xs">Výška startu (m)</label>
           <input type="number" value={params.startHeight} min={1} max={500}
             onChange={(e) => set('startHeight', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Vyska konce (m)</label>
+          <label className="text-gray-500 text-xs">Výška konce (m)</label>
           <input type="number" value={params.endHeight} min={1} max={500}
             onChange={(e) => set('endHeight', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
@@ -406,20 +406,20 @@ export default function FacadePanel({
         return (
           <>
             <div className="bg-[#0f1117] rounded-lg p-3 border border-gray-700 text-xs text-gray-400 grid grid-cols-2 gap-1">
-              <span>Sirka fasady: <span className="text-white">{stats.facadeWidthM} m</span></span>
-              <span>Rady: <span className="text-white">{stats.numRows}</span></span>
+              <span>Šířka fasády: <span className="text-white">{stats.facadeWidthM} m</span></span>
+              <span>Řady: <span className="text-white">{stats.numRows}</span></span>
               <span>Fotky: <span className="text-white">~{stats.totalPhotos}</span></span>
               <span>Trasa: <span className="text-white">{(stats.totalDistanceM / 1000).toFixed(2)} km</span></span>
               <span className="col-span-2">Waypointy: <span className={wpColor}>{stats.waypointCount} / 200</span></span>
             </div>
             {stats.waypointCount > 200 && (
               <div className="bg-red-900/30 border border-red-700 rounded-lg p-2 text-xs text-red-400">
-                Prekrocen limit 200 waypointu. Sniz prekryv nebo zmen rozsah vysek.
+                Překročen limit 200 waypointů. Sniž překryv nebo změň rozsah výšek.
               </div>
             )}
             {stats.waypointCount > 150 && stats.waypointCount <= 200 && (
               <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-2 text-xs text-yellow-400">
-                Blizis se limitu DJI Fly (200 waypointu).
+                Blížíš se limitu DJI Fly (200 waypointů).
               </div>
             )}
           </>
@@ -438,12 +438,12 @@ export default function FacadePanel({
             </div>
             {stats360.waypointCount > 200 && (
               <div className="bg-red-900/30 border border-red-700 rounded-lg p-2 text-xs text-red-400">
-                Prekrocen limit 200 waypointu. Sniz prekryv nebo zmen rozsah vysek.
+                Překročen limit 200 waypointů. Sniž překryv nebo změň rozsah výšek.
               </div>
             )}
             {stats360.waypointCount > 150 && stats360.waypointCount <= 200 && (
               <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-2 text-xs text-yellow-400">
-                Blizis se limitu DJI Fly (200 waypointu).
+                Blížíš se limitu DJI Fly (200 waypointů).
               </div>
             )}
           </>

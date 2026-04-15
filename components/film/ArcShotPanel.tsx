@@ -171,7 +171,7 @@ export default function ArcShotPanel({
                   : 'bg-[#0f1117] border-gray-700 text-gray-400 hover:text-white'
               }`}
             >
-              CW (po smeru)
+              CW (po směru)
             </button>
             <button
               onClick={() => setDirection(-1)}

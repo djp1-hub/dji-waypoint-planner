@@ -20,7 +20,7 @@ const SEVERITY_ICON: Record<Severity, string> = {
 
 /** Label text for camera action options */
 const CAMERA_ACTION_LABELS: Record<CameraAction, string> = {
-  none: 'Zadna',
+  none: 'Žádná',
   photo: 'Foto',
   startVideo: 'Spustit video',
   stopVideo: 'Zastavit video',
@@ -37,7 +37,7 @@ export default function WaypointPanel({
     return (
       <div className="text-center py-8 text-gray-500 text-sm">
         <p>Klikni na mapu</p>
-        <p>pro pridani waypointu</p>
+        <p>pro přidání waypointu</p>
       </div>
     );
   }
@@ -91,7 +91,7 @@ export default function WaypointPanel({
           <div className="grid grid-cols-3 gap-2">
             {/* Altitude */}
             <div className="flex flex-col gap-1">
-              <label className="text-gray-500 text-xs">Vyska (m)</label>
+              <label className="text-gray-500 text-xs">Výška (m)</label>
               <input
                 type="number"
                 value={wp.height}
@@ -118,7 +118,7 @@ export default function WaypointPanel({
 
             {/* Wait time */}
             <div className="flex flex-col gap-1">
-              <label className="text-gray-500 text-xs">Cekani (s)</label>
+              <label className="text-gray-500 text-xs">Čekání (s)</label>
               <input
                 type="number"
                 value={wp.waitTime}
@@ -154,7 +154,7 @@ export default function WaypointPanel({
         onClick={() => { if (confirm('Smazat všechny waypointy?')) onClearAll(); }}
         className="mt-2 w-full py-2 text-xs text-red-400 border border-red-900 rounded-lg hover:bg-red-900/30 transition-colors"
       >
-        Smazat vse
+        Smazat vše
       </button>
     </div>
   );

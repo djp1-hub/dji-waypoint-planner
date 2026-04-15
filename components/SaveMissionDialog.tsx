@@ -10,7 +10,7 @@ interface SaveMissionDialogProps {
 }
 
 export default function SaveMissionDialog({ open, onSave, onClose }: SaveMissionDialogProps) {
-  const [name, setName] = useState('Nova mise');
+  const [name, setName] = useState('Nová mise');
   const inputRef = useRef<HTMLInputElement>(null);
   const focusTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -22,7 +22,7 @@ export default function SaveMissionDialog({ open, onSave, onClose }: SaveMission
   // Focus the input and reset name whenever the dialog opens
   useEffect(() => {
     if (open) {
-      setName('Nova mise');
+      setName('Nová mise');
       // Small timeout so the element is rendered before focusing
       focusTimerRef.current = setTimeout(() => inputRef.current?.select(), 50);
     }
@@ -61,7 +61,7 @@ export default function SaveMissionDialog({ open, onSave, onClose }: SaveMission
         className="bg-[#1a1d27] border border-gray-700 rounded-xl p-6 w-80 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-white font-semibold text-base mb-4">Ulozit misi</h2>
+        <h2 className="text-white font-semibold text-base mb-4">Uložit misi</h2>
 
         <input
           ref={inputRef}
@@ -78,14 +78,14 @@ export default function SaveMissionDialog({ open, onSave, onClose }: SaveMission
             onClick={onClose}
             className="flex-1 py-2 text-sm text-gray-400 bg-[#0f1117] border border-gray-700 rounded-lg hover:text-white transition-colors"
           >
-            Zrusit
+            Zrušit
           </button>
           <button
             onClick={handleSubmit}
             disabled={!name.trim()}
             className="flex-1 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            Ulozit
+            Uložit
           </button>
         </div>
       </div>

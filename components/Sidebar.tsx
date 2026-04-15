@@ -699,7 +699,7 @@ export default function Sidebar({
             onClick={onSaveMission}
             className="flex-1 py-2 bg-[#1a1d27] text-white text-sm rounded-lg border border-gray-600 hover:border-blue-500 transition-colors"
           >
-            Ulozit misi
+            Uložit misi
           </button>
           {waypoints.length > 0 && (
             <button
@@ -731,13 +731,13 @@ export default function Sidebar({
       {/* Navigation links */}
       <div className="px-3 pb-3 flex gap-3 flex-shrink-0 flex-wrap">
         <Link href="/missions" className="text-xs text-gray-500 hover:text-blue-400 transition-colors">
-          Ulozene mise
+          Uložené mise
         </Link>
         <Link href="/guide" className="text-xs text-gray-500 hover:text-blue-400 transition-colors">
-          Navod RC 2
+          Návod RC 2
         </Link>
         <Link href="/help" className="text-xs text-gray-500 hover:text-blue-400 transition-colors">
-          Napoveda
+          Nápověda
         </Link>
         {/* KMZ import — hidden file input triggered by label click */}
         <label className="text-xs text-gray-500 hover:text-blue-400 transition-colors cursor-pointer">

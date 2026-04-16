@@ -16,11 +16,8 @@ const KEYS = {
 } as const;
 
 // ── Default drones ───────────────────────────────────────────────────────────
-// droneEnumValue pro KMZ export (wpml:droneEnumValue):
-//   Mini 4 Pro  = 67 (ověřeno)
-//   Mavic 3 Pro = 68 (ověřeno)
-//   Air 3       = TBD (neověřeno — neměňte exportKMZ.ts dokud není potvrzeno)
-//   Mini 3 Pro  = TBD (neověřeno — neměňte exportKMZ.ts dokud není potvrzeno)
+// Obsahuje pouze drony s ověřeným droneEnumValue (viz lib/droneEnumMap.ts).
+// Pro přidání nového dronu je potřeba reálný KMZ export z DJI Fly.
 
 export const DEFAULT_DRONE: Drone = {
   id:           'default-mini4pro',
@@ -41,20 +38,6 @@ export const DEFAULT_DRONE: Drone = {
 export const DEFAULT_DRONES: Drone[] = [
   DEFAULT_DRONE,
   {
-    id:           'default-air3',
-    name:         'DJI Air 3',
-    manufacturer: 'DJI',
-    model:        'Air 3',
-    weightG:      720,
-    droneClass:   'C1',
-    serialNumber: '',
-    batteryWh:    46.2,
-    avgPowerW:    38,
-    maxAltitudeM: 120,
-    maxSpeedMs:   21,
-    isDefault:    false,
-  },
-  {
     id:           'default-mavic3pro',
     name:         'DJI Mavic 3 Pro',
     manufacturer: 'DJI',
@@ -66,20 +49,6 @@ export const DEFAULT_DRONES: Drone[] = [
     avgPowerW:    48,
     maxAltitudeM: 120,
     maxSpeedMs:   21,
-    isDefault:    false,
-  },
-  {
-    id:           'default-mini3pro',
-    name:         'DJI Mini 3 Pro',
-    manufacturer: 'DJI',
-    model:        'Mini 3 Pro',
-    weightG:      249,
-    droneClass:   'C0',
-    serialNumber: '',
-    batteryWh:    33.9,
-    avgPowerW:    23,
-    maxAltitudeM: 120,
-    maxSpeedMs:   16,
     isDefault:    false,
   },
 ];

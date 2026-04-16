@@ -1,107 +1,113 @@
-// GEOCODING PROVIDER: Nominatim (OpenStreetMap)
-// Pro komerční provoz vyměnit za:
-//   - Mapy.cz API: https://api.mapy.cz (nejlepší pro ČR)
+// GEOCODING PROVIDER: Mapy.cz API v1 (api.mapy.cz)
+// Optimalizováno pro ČR — nejlepší pokrytí českých adres a POI.
+// Vyžaduje env proměnnou NEXT_PUBLIC_MAPY_API_KEY (developer.mapy.cz).
+//
+// Pro přepnutí na jiný provider stačí nahradit funkci searchAddress() níže:
+//   - Nominatim (OpenStreetMap): zdarma, ale zakázáno pro komerční provoz
 //   - Mapbox: https://docs.mapbox.com/api/search/geocoding/
-// Stačí upravit funkci searchAddress() níže.
+
+const MAPY_API_KEY = process.env.NEXT_PUBLIC_MAPY_API_KEY ?? '';
+
+// Bounding box České republiky — preferuje výsledky z ČR (není striktní filtr)
+const CZ_BBOX = '12.09,48.55,18.87,51.06';
 
 /** Result returned by the geocoding provider */
 export interface GeocodingResult {
-  /** Short display name — typically street + city */
+  /** Short display name — typically place name or street + city */
   name: string;
-  /** Full address string for the detail line */
+  /** Full location label for the detail line (name + administrative area) */
   displayName: string;
   lat: number;
   lng: number;
-  /** Nominatim place_id — used as a stable React list key */
+  /** Stable React list key — undefined when the provider doesn't supply an ID */
   placeId?: number;
 }
 
-/** Raw shape of a single Nominatim JSON result */
-interface NominatimResult {
-  place_id?: number;
-  display_name: string;
-  lat: string;
-  lon: string;
-  address?: {
-    road?: string;
-    house_number?: string;
-    city?: string;
-    town?: string;
-    village?: string;
-    municipality?: string;
+/** Raw shape of a single item in the Mapy.cz v1 geocode response */
+interface MapyCzItem {
+  name: string;
+  label: string;
+  position: {
+    lon: number;
+    lat: number;
   };
+  type: string;
+  location: string;
+}
+
+/** Raw shape of the Mapy.cz v1 geocode API response */
+interface MapyCzResponse {
+  items: MapyCzItem[];
 }
 
 /**
- * Search for addresses matching the given query string.
- * Currently powered by Nominatim (OpenStreetMap) — free, no API key required.
- * For commercial use, swap this function for Mapy.cz or Mapbox (see file header).
+ * Search for addresses and places matching the given query string.
+ * Powered by Mapy.cz API v1 — preferred results from Czech Republic.
+ * Docs: https://api.mapy.cz/v1/docs/geocode/
  *
- * @param query - Address or place name to search for
- * @returns Up to 5 matching results, filtered to Czech Republic
+ * @param query  - Address or place name to search for
+ * @param signal - Optional AbortSignal for cancelling in-flight requests
+ * @returns Up to 5 matching results, preferring Czech Republic
  */
 export async function searchAddress(query: string, signal?: AbortSignal): Promise<GeocodingResult[]> {
   if (!query.trim()) return [];
 
+  if (!MAPY_API_KEY) {
+    throw new Error(
+      'Geocoding API klíč není nastaven. Zkontroluj proměnnou NEXT_PUBLIC_MAPY_API_KEY v .env.local.'
+    );
+  }
+
   const params = new URLSearchParams({
-    q: query,
-    format: 'json',
-    addressdetails: '1',
-    countrycodes: 'cz',  // Restrict results to Czech Republic
+    apikey: MAPY_API_KEY,
+    query,
     limit: '5',
+    lang: 'cs',
+    preferBBox: CZ_BBOX,
   });
 
   let response: Response;
   try {
     response = await fetch(
-      `https://nominatim.openstreetmap.org/search?${params.toString()}`,
-      {
-        signal,
-        headers: {
-          // Nominatim requires a valid User-Agent identifying the application
-          'User-Agent': 'DJI-Waypoint-Planner/1.0',
-        },
-      }
+      `https://api.mapy.cz/v1/geocode?${params.toString()}`,
+      { signal }
     );
   } catch (err) {
-    // AbortError is expected when a newer search cancels this one — rethrow as-is
+    // AbortError = request was superseded by a newer search — rethrow as-is
     if (err instanceof Error && err.name === 'AbortError') throw err;
     throw new Error('Nepodařilo se připojit k geocoding API. Zkontroluj internetové připojení.');
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    throw new Error('Geocoding API klíč je neplatný nebo nemá potřebná oprávnění.');
+  }
+
+  if (response.status === 429) {
+    throw new Error('Překročen limit dotazů geocoding API. Zkus to za chvíli.');
   }
 
   if (!response.ok) {
     throw new Error(`Geocoding API vrátila chybu ${response.status}. Zkus to znovu.`);
   }
 
-  let data: NominatimResult[];
+  let data: MapyCzResponse;
   try {
     data = await response.json();
   } catch {
     throw new Error('Geocoding API vrátila neplatná data.');
   }
 
-  return data.map((item) => {
-    // Build a short name from address components when available
-    const addr = item.address;
-    let name = '';
-    if (addr) {
-      const street = addr.road
-        ? `${addr.road}${addr.house_number ? ' ' + addr.house_number : ''}`
-        : '';
-      const city = addr.city ?? addr.town ?? addr.village ?? addr.municipality ?? '';
-      name = [street, city].filter(Boolean).join(', ');
-    }
-    // Fall back to the first part of the full display name
-    if (!name) {
-      name = item.display_name.split(',').slice(0, 2).join(',').trim();
-    }
+  return data.items.map((item) => {
+    // displayName = "název místa, administrativní lokace" (např. "Václavské náměstí, Praha 1 - Nové Město, Česko")
+    const displayName = item.location ? `${item.name}, ${item.location}` : item.name;
 
     return {
-      name,
-      displayName: item.display_name,
-      lat: parseFloat(item.lat),
-      lng: parseFloat(item.lon),
-      placeId: item.place_id,
+      name: item.name,
+      displayName,
+      lat: item.position.lat,
+      lng: item.position.lon,
+      // Mapy.cz v1 nevrací numerické place ID — SearchBar fallbackuje na index
+      placeId: undefined,
     };
   });
 }

@@ -1,13 +1,7 @@
 # Roadmap – DJI Waypoint Planner
 
-## 🔥 Vysoká priorita
-- [ ] Geocoding swap na Mapy.cz API pro komerční provoz
-      (abstrakční vrstva lib/geocoding.ts je připravena,
-       stačí vyměnit funkci searchAddress())
-
 ## 📋 Střední priorita
 - [x] Sdílení misí jako URL odkaz (URL encode JSON mise)
-- [x] Sdílení misí — URL odkaz hotovo
 
 ## 💡 Nápady a budoucí rozvoj
 - [x] Správa pilotů – více uložených pilotů
@@ -82,6 +76,14 @@
 *Poznámka: Design se dělá až po dokončení všech funkcionalit.*
 
 ## ✅ Dokončeno (přesunuto z plánů)
+- [x] Geocoding Nominatim → Mapy.cz API v1 (lib/geocoding.ts, NEXT_PUBLIC_MAPY_API_KEY)
+      Nominatim zakázán pro komerční provoz — nahrazen Mapy.cz (nejlepší pokrytí ČR)
+- [x] PWA ikony — nový brand design (drone top-down view, #f97316 orange accent)
+      icon-192/512 + maskable varianty, scripts/generate-icons.py, icon-source.svg
+- [x] droneEnumMap cleanup — pouze ověřené modely Mini 4 Pro (67) a Mavic 3 Pro (68)
+      Air 3 (neověřený enum) a Mini 3 Pro (nepodporuje waypoint mise) odstraněny
+- [x] Google Photorealistic 3D Tiles — ODSTRANĚNO
+      EEA omezení Google od 8.7.2025 — Česká republika blokována, nefunguje pro žádného CZ uživatele
 - [x] Správa pilotů + dronů + kombinace pilot/dron
       (/settings, lib/profileStore.ts, Pilot + Drone typy,
        ActiveProfileBadge v sidebaru, batteryEstimate dle dronu,

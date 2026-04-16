@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!--
+    DJI Waypoint Planner — master icon source
+    Brand colors:
+      Background  #0f1117  (dark, matches app globals)
+      Accent      #f97316  (orange-500, matches Sidebar/UI highlights)
+      Body        #ffffff  (white)
+      Arms/props  #9ca3af  (gray-400)
+
+    Content safely within maskable safe zone (central 80% circle, r=204px):
+      Propeller outer edge is ≤172px from center — within safe zone.
+
+    Regenerate PNGs:  python scripts/generate-icons.py
+  -->
+
+  <!-- Background (full square — OS applies shape/rounding) -->
+  <rect width="512" height="512" fill="#0f1117"/>
+
+  <!-- ── Drone arms (diagonal, 22px wide) ── -->
+  <line x1="218" y1="218" x2="172" y2="172" stroke="#9ca3af" stroke-width="22" stroke-linecap="round"/>
+  <line x1="294" y1="218" x2="340" y2="172" stroke="#9ca3af" stroke-width="22" stroke-linecap="round"/>
+  <line x1="218" y1="294" x2="172" y2="340" stroke="#9ca3af" stroke-width="22" stroke-linecap="round"/>
+  <line x1="294" y1="294" x2="340" y2="340" stroke="#9ca3af" stroke-width="22" stroke-linecap="round"/>
+
+  <!-- ── Propeller rings (stroke-only, dark fill covers arm ends) ── -->
+  <!-- Top-left -->
+  <circle cx="152" cy="152" r="48" fill="#0f1117" stroke="#9ca3af" stroke-width="14"/>
+  <!-- Top-right -->
+  <circle cx="360" cy="152" r="48" fill="#0f1117" stroke="#9ca3af" stroke-width="14"/>
+  <!-- Bottom-left -->
+  <circle cx="152" cy="360" r="48" fill="#0f1117" stroke="#9ca3af" stroke-width="14"/>
+  <!-- Bottom-right -->
+  <circle cx="360" cy="360" r="48" fill="#0f1117" stroke="#9ca3af" stroke-width="14"/>
+
+  <!-- ── Drone body (center square, white) ── -->
+  <rect x="214" y="214" width="84" height="84" rx="14" fill="#ffffff"/>
+
+  <!-- ── Orange center dot — waypoint marker ── -->
+  <circle cx="256" cy="256" r="22" fill="#f97316"/>
+
+  <!-- ── Orange flight path below body (3 waypoint dots + connecting line) ── -->
+  <!-- Horizontal dashed line suggesting a planned route -->
+  <line x1="148" y1="420" x2="364" y2="420" stroke="#f97316" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 28" opacity="0.0"/>
+
+  <!-- 3 waypoint stops on a route line -->
+  <line x1="134" y1="428" x2="378" y2="428" stroke="#f97316" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+  <circle cx="160" cy="428" r="9" fill="#f97316" opacity="0.9"/>
+  <circle cx="256" cy="428" r="9" fill="#f97316" opacity="0.9"/>
+  <circle cx="352" cy="428" r="9" fill="#f97316" opacity="0.9"/>
+</svg>

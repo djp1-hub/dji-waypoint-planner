@@ -17,7 +17,6 @@ declare global { interface Window { Cesium: any } }
 
 // Tokens read from environment variables — never hardcode here.
 const CESIUM_TOKEN = process.env.NEXT_PUBLIC_CESIUM_TOKEN ?? '';
-const GOOGLE_MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
 
 // Bump this string when upgrading CesiumJS.
 const CESIUM_VERSION = '1.115';
@@ -67,8 +66,6 @@ export default function Preview3DPage() {
   const viewerRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tilesetRef = useRef<any>(null);        // OSM Buildings tileset
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const googleTilesetRef = useRef<any>(null);  // Google Photorealistic 3D Tiles
   // Ref to camera.changed handler so it can be removed in cleanup (prevents stale setHeading calls)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cameraChangedHandlerRef = useRef<any>(null);
@@ -77,10 +74,6 @@ export default function Preview3DPage() {
   const [loading, setLoading] = useState<string>('Načítám Cesium...');
   const [mapReady, setMapReady] = useState(false);
   const [buildingsVisible, setBuildingsVisible] = useState(true);
-  // googleTilesAvailable: Google tiles loaded from API (button becomes visible)
-  const [googleTilesAvailable, setGoogleTilesAvailable] = useState(false);
-  // googleTilesActive: Google tiles currently visible (button highlight)
-  const [googleTilesActive, setGoogleTilesActive] = useState(false);
   // heading: current camera heading in degrees (0 = north), drives the rotating compass
   const [heading, setHeading] = useState(0);
   const [missionMeta, setMissionMeta] = useState<{
@@ -189,27 +182,6 @@ export default function Preview3DPage() {
           console.warn('[preview-3d] OSM Buildings failed to load');
         }
 
-        // 6. Google Photorealistic 3D Tiles — high-res satellite + buildings.
-        // Mutually exclusive with OSM Buildings: if Google tiles load successfully,
-        // OSM Buildings are hidden. If they fail, OSM Buildings remain visible.
-        if (GOOGLE_MAPS_KEY) {
-          try {
-            const googleTileset = await Cesium.createGooglePhotorealistic3DTileset(
-              GOOGLE_MAPS_KEY,
-            );
-            viewer.scene.primitives.add(googleTileset);
-            googleTilesetRef.current = googleTileset;
-            // Google 3D loaded — hide OSM Buildings to avoid duplicates
-            if (tilesetRef.current) tilesetRef.current.show = false;
-            setBuildingsVisible(false);
-            setGoogleTilesAvailable(true);
-            setGoogleTilesActive(true);
-          } catch (err) {
-            // Google 3D failed (billing, quota, API key) — OSM Buildings stay visible
-            console.warn('[preview-3d] Google 3D Tiles failed, using OSM Buildings:', err);
-          }
-        }
-
         // 6. Build absolute positions: ground elevation + AGL waypoint height.
         // For visualization only — KMZ export uses the original heights unchanged.
         // Minimum AGL is raised to 80 m so the route flies clearly above buildings.
@@ -308,37 +280,16 @@ export default function Preview3DPage() {
       viewerRef.current?.destroy();
       viewerRef.current = null;
       tilesetRef.current = null;
-      googleTilesetRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Toggle OSM Buildings ──────────────────────────────────────────────────
-  // When enabling OSM Buildings, Google 3D Tiles are hidden (mutually exclusive).
+  // ── Toggle OSM Buildings ─────────────────────────────────────────────────
   function handleToggleBuildings() {
     if (!tilesetRef.current) return;
     const next = !buildingsVisible;
     tilesetRef.current.show = next;
     setBuildingsVisible(next);
-    // Mutual exclusivity: hide Google 3D when enabling OSM Buildings
-    if (next && googleTilesetRef.current) {
-      googleTilesetRef.current.show = false;
-      setGoogleTilesActive(false);
-    }
-  }
-
-  // ── Toggle Google Photorealistic 3D Tiles ─────────────────────────────────
-  // When enabling Google 3D Tiles, OSM Buildings are hidden (mutually exclusive).
-  function handleToggleGoogleTiles() {
-    if (!googleTilesetRef.current) return;
-    const next = !googleTilesActive;
-    googleTilesetRef.current.show = next;
-    setGoogleTilesActive(next);
-    // Mutual exclusivity: hide OSM Buildings when enabling Google 3D
-    if (next && tilesetRef.current) {
-      tilesetRef.current.show = false;
-      setBuildingsVisible(false);
-    }
   }
 
   // ── Camera helpers — window.Cesium is available after CDN script loads ────
@@ -457,11 +408,6 @@ export default function Preview3DPage() {
                 Výška v náhledu: {missionMeta.avgDisplayHeight} m AGL
               </div>
             )}
-            {googleTilesActive && (
-              <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
-                🌍 Google 3D: dostupné ve větších městech
-              </div>
-            )}
             <div className="text-gray-600 text-[10px] mt-1">
               {new Date(missionMeta.timestamp).toLocaleTimeString('cs-CZ', {
                 hour: '2-digit',
@@ -505,19 +451,6 @@ export default function Preview3DPage() {
           >
             🏢 Budovy
           </button>
-          {/* Google 3D button only visible when Google tiles loaded successfully */}
-          {googleTilesAvailable && (
-            <button
-              onClick={handleToggleGoogleTiles}
-              className={`px-3 py-1.5 backdrop-blur border text-xs rounded transition-colors ${
-                googleTilesActive
-                  ? 'bg-green-600/80 border-green-500 text-white'
-                  : 'bg-[#1a1d27]/90 border-gray-600 text-gray-400 hover:border-gray-400'
-              }`}
-            >
-              🌍 Google 3D
-            </button>
-          )}
         </div>
       </div>
 

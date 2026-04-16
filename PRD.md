@@ -201,7 +201,7 @@ Aplikace zobrazí krok za krokem:
 - Odhad baterie: parametry výpočtu, upozornění na vítr
 - Přepínač vrstev mapy: OSM / Satelit / Terén
 - Severka (2D mapa) a rotující kompas (3D náhled), dblclick chování
-- 3D náhled: Google Photorealistic 3D Tiles, ovládání, kompas
+- 3D náhled: CesiumJS, OSM Buildings, World Terrain, ovládání, kompas
 - Import KMZ: popis, omezení (filmové mise → waypointy)
 - NP a CHKO: pravidla pro drony, barevné karty NP/CHKO, odkaz letejtezodpovedne.cz
 
@@ -210,7 +210,7 @@ Aplikace zobrazí krok za krokem:
 - Data přes `localStorage['preview3d-mission']` (JSON s waypoints + timestamp)
 - World Terrain (Cesium ion) — reálný 3D terén s vertex normály a vodními maskami
 - OSM Buildings (Cesium ion) — miliony 3D budov z OpenStreetMap, toggle tlačítkem
-- Google Photorealistic 3D Tiles (Google Maps API) — toggle 🌍, fallback na OSM Buildings
+- OSM Buildings (Cesium ion) — 3D budovy z OpenStreetMap, toggle tlačítkem
 - Trasa jako CesiumJS polyline s PolylineGlowMaterialProperty, `clampToGround: false`
 - Absolutní výšky: Open-Meteo MSL elevace + AGL výška waypointu (min. 80 m pro náhled)
 - Oranžové waypoint markery (pixelSize 16) s číslovanými labely ve výšce letu
@@ -337,7 +337,7 @@ Aplikace zobrazí krok za krokem:
 
 ### 📋 Plánováno – budoucí rozvoj
 - Geocoding swap na Mapy.cz API pro komerční provoz (abstrakční vrstva `lib/geocoding.ts` připravena)
-- Google Maps API klíč omezit na produkční doménu (security)
+- Anglická jazyková mutace
 - Anglická jazyková mutace
 
 ---
@@ -368,4 +368,4 @@ Aplikace zobrazí krok za krokem:
 - [x] Export Litchi CSV pro starší drony
 - [x] NPR/NPP/PR/PP přírodní rezervace na mapě s kolizní detekcí
 - [ ] Anglická lokalizace
-- [x] Google Photorealistic 3D Tiles v 3D náhledu
+- [x] 3D náhled mise (CesiumJS, World Terrain, OSM Buildings)

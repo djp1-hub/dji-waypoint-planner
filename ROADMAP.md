@@ -7,8 +7,7 @@
 
 ## 📋 Střední priorita
 - [x] Sdílení misí jako URL odkaz (URL encode JSON mise)
-- [x] Google Photorealistic 3D Tiles integrace do 3D náhledu
-      (hotovo – toggle tlačítko 🌍 Google 3D, fallback na OSM Buildings)
+- [x] Sdílení misí — URL odkaz hotovo
 
 ## 💡 Nápady a budoucí rozvoj
 - [x] Správa pilotů – více uložených pilotů
@@ -35,10 +34,9 @@
       letiště, Správa železnic, AOPK).
       Šablony žádostí a kontakty pro každý typ zóny.
 
-- [x] Rozšíření na další drony DJI – Air 3 (C1, 720g), Mavic 3 Pro (C2, 895g),
-      Mini 3 Pro (C0, 249g) přidány do DEFAULT_DRONES v profileStore.ts;
-      automatické přidání stávajícím uživatelům při načtení (merge dle name).
-      KMZ droneEnumValue: Mini 4 Pro=67, Mavic 3 Pro=68, Air 3+Mini 3 Pro=TBD.
+- [x] Drony — pouze ověřené modely (Mini 4 Pro=67, Mavic 3 Pro=68);
+      Air 3 a Mini 3 Pro odstraněny (neověřený droneEnumValue / Mini 3 Pro
+      nepodporuje waypoint mise)
 
 - [ ] Standalone režim identifikátoru letových zón –
       aplikace použitelná bez plánování mise pouze
@@ -52,12 +50,6 @@
       ale potřebují rychle zkontrolovat zóny
       a vyřídit povolení.
 
-- [ ] BEZPEČNOST: Omezit Google Maps API klíč na konkrétní doménu
-      před komerčním nasazením.
-      Postup: Google Cloud Console → APIs & Services → Credentials →
-      vybrat klíč → Application restrictions → HTTP referrers →
-      přidat produkční doménu.
-      Aktuálně: klíč bez omezení (OK pro vývoj a testování).
 - [ ] Komercionalizace – multi-user, přihlášení, Supabase
 - [x] Help sekce – sekce #letzone (letové zóny, barevná legenda CTR/TRA,
       postup při kolizi, odkaz na dronemap.gov.cz) a #kolize (kolizní detekce,

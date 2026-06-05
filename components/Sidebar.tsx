@@ -179,16 +179,19 @@ interface SidebarProps {
 }
 
 /** Reusable tab strip — renders a row of toggle buttons with a shared active color. */
+/** Reusable tab strip — renders a row of toggle buttons with a shared active color. */
 function TabGroup<T extends string>({
   tabs,
   activeTab,
   onSelect,
   activeColor,
+  t,
 }: {
-  tabs: { type: T; label: string }[];
+  tabs: { type: T; labelKey: string }[];
   activeTab: T;
   onSelect: (type: T) => void;
   activeColor: string;
+  t: (key: string) => string;
 }) {
   return (
     <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none">
@@ -389,20 +392,22 @@ export default function Sidebar({
       {/* Mission type tabs — switches based on app mode */}
       <div className="px-2 pt-2 flex-shrink-0">
         {appMode === 'photo' ? (
-          <TabGroup
-            tabs={PHOTO_TABS}
-            activeTab={missionType}
-            onSelect={onMissionTypeChange}
-            activeColor="bg-blue-600"
-          />
-        ) : (
-          <TabGroup
-            tabs={FILM_TABS}
-            activeTab={filmType}
-            onSelect={onFilmTypeChange}
-            activeColor="bg-purple-600"
-          />
-        )}
+  <TabGroup
+    tabs={PHOTO_TABS}
+    activeTab={missionType}
+    onSelect={onMissionTypeChange}
+    activeColor="bg-blue-600"
+    t={t}
+  />
+) : (
+  <TabGroup
+    tabs={FILM_TABS}
+    activeTab={filmType}
+    onSelect={onFilmTypeChange}
+    activeColor="bg-purple-600"
+    t={t}
+  />
+)}
       </div>
 
       {/* Panel content */}

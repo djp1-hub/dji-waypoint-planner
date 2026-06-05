@@ -245,24 +245,30 @@ export function generatePolygonGridWaypoints(
 
   const rows = buildRows(rotatedPolygon, rowSpacing, photoSpacing);
 
-  const route: Point[] = [];
+const route: Point[] = [];
 
-  // Главная логика порядка:
-  // 1-я строка: слева направо
-  // 2-я строка: справа налево
-  // 3-я строка: слева направо
-  // и так далее.
-  //
-  // Это устраняет диагональную "паутину" между строками.
-  rows.forEach((rowPoints, rowIndex) => {
-    if (rowIndex % 2 === 0) {
-      route.push(...rowPoints);
-    } else {
-      route.push(...[...rowPoints].reverse());
-    }
-  });
+rows.forEach((rowPoints) => {
+  if (rowPoints.length === 0) {
+    return;
+  }
 
-  const cleanRoute = deduplicateSequentialPoints(route);
+  if (route.length === 0) {
+    route.push(...rowPoints);
+    return;
+  }
+
+  const last = route[route.length - 1];
+  const firstDistance = distance(last, rowPoints[0]);
+  const lastDistance = distance(last, rowPoints[rowPoints.length - 1]);
+
+  if (lastDistance < firstDistance) {
+    route.push(...[...rowPoints].reverse());
+  } else {
+    route.push(...rowPoints);
+  }
+});
+
+const cleanRoute = deduplicateSequentialPoints(route);
 
   return cleanRoute.map((p, index) => {
     const unrotated = rotatePoint(p, angleRad);

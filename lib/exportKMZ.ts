@@ -137,7 +137,7 @@ function headingParamXml(mission: Mission, wp: Waypoint, index: number): string 
 
 function turnParamXml(): string {
   return `        <wpml:waypointTurnParam>
-          <wpml:waypointTurnMode>toPointAndStopWithContinuityCurvature</wpml:waypointTurnMode>
+          <wpml:waypointTurnMode>toPointAndStopWithDiscontinuityCurvature</wpml:waypointTurnMode>
           <wpml:waypointTurnDampingDist>0</wpml:waypointTurnDampingDist>
         </wpml:waypointTurnParam>`;
 }

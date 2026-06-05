@@ -64,7 +64,6 @@ function PilotForm({
   onSave: (data: Omit<Pilot, 'id'>) => void;
   onCancel: () => void;
 }) {
-  const { t } = useTranslation();
   const [form, setForm] = useState(initial);
   const set = (key: keyof typeof form) => (v: string) =>
     setForm((prev) => ({ ...prev, [key]: v }));
@@ -108,7 +107,6 @@ function DroneForm({
   onSave: (data: Omit<Drone, 'id'>) => void;
   onCancel: () => void;
 }) {
-  const { t } = useTranslation();
   const [form, setForm] = useState(initial);
   const set = (key: keyof typeof form) => (v: string) =>
     setForm((prev) => ({

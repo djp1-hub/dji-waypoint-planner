@@ -25,6 +25,11 @@ const Sidebar = dynamic(() => import('@/components/Sidebar'), { ssr: false });
 /** Shot types available in film mode */
 export type FilmType = 'dronie' | 'reveal' | 'topdown' | 'craneup' | 'hyperlapse' | 'arcshot' | 'boomerang' | 'rocket' | 'poisequence';
 
+const REGION_DEFAULT_CENTER: Record<DataRegion, { lat: number; lng: number; zoom: number }> = {
+  cz: { lat: 50.08, lng: 14.42, zoom: 12 },      // Prague
+  rs: { lat: 44.8125, lng: 20.4612, zoom: 12 },  // Belgrade
+};
+
 export default function HomePage() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -140,7 +145,10 @@ export default function HomePage() {
   }, []);
 
   // ── Map state ────────────────────────────────────────────────
-  const [mapCenter, setMapCenter] = useState({ lat: 50.08, lng: 14.42 });
+  const [mapCenter, setMapCenter] = useState({
+    lat: REGION_DEFAULT_CENTER[DEFAULT_DATA_REGION].lat,
+    lng: REGION_DEFAULT_CENTER[DEFAULT_DATA_REGION].lng,
+  });
 
   // ── Fly-to target (driven by address search in SearchBar) ─────
   // Setting a new object triggers the useEffect in Map.tsx which calls map.flyTo().
@@ -148,6 +156,33 @@ export default function HomePage() {
 
   const handleFlyTo = useCallback((lat: number, lng: number) => {
     setFlyToTarget({ lat, lng, zoom: 17 });
+  }, []);
+
+  const handleDataRegionChange = useCallback((region: DataRegion) => {
+    setDataRegion(region);
+
+    const center = REGION_DEFAULT_CENTER[region];
+
+    setMapCenter({
+      lat: center.lat,
+      lng: center.lng,
+    });
+
+    setFlyToTarget({
+      lat: center.lat,
+      lng: center.lng,
+      zoom: center.zoom,
+    });
+
+    // Reset layer toggles so old-country overlays do not remain visible
+    // while the new region data is loading.
+    setShowAirspace(false);
+    setShowProtectedAreas(false);
+    setShowSmallReserves(false);
+    setShowWaterSources(false);
+    setShowRailways(false);
+    setShowRoads(false);
+    setShowPowerlines(false);
   }, []);
 
   // ── URL mission import — runs once on mount ───────────────────
@@ -777,7 +812,7 @@ const handleShareMission = useCallback(async () => {
         isExporting={isExporting}
         activeDrone={activeDrone}
         dataRegion={dataRegion}
-        onDataRegionChange={setDataRegion}
+        onDataRegionChange={handleDataRegionChange}
       />
 
       {/* Toast notification — appears bottom-right, auto-dismisses after 3 s */}

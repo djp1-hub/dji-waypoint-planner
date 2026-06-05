@@ -250,7 +250,7 @@ function calculateCoverage(params: PolygonGridParams) {
   const rowSpacing = footprintAcrossM * overlapFactor;
   const photoSpacing = footprintAlongM * overlapFactor;
 
-  const interval = params.photoIntervalSec > 0 ? params.photoIntervalSec : 2;
+  const interval = params.photoIntervalSec >= 1 ? params.photoIntervalSec : 1;
   const intervalSpeed = photoSpacing / interval;
 
   return {
@@ -285,15 +285,27 @@ export function generatePolygonGridWaypoints(
     throw new Error('Speed must be greater than zero');
   }
 
-  if (params.photoIntervalSec <= 0) {
-    throw new Error('Photo interval must be greater than zero');
-  }
+  const safePhotoIntervalSec =
+    Number.isFinite(params.photoIntervalSec) && params.photoIntervalSec >= 1
+      ? params.photoIntervalSec
+      : 1;
+
+  const safeGimbalPitch =
+    Number.isFinite(params.gimbalPitch)
+      ? Math.min(0, Math.max(-90, params.gimbalPitch))
+      : -90;
 
   const origin = polygonCentroid(polygon);
   const angleRad = (params.direction * Math.PI) / 180;
   const localPolygon = polygon.map((p) => latLngToMeters(p, origin));
   const rotatedPolygon = localPolygon.map((p) => rotatePoint(p, -angleRad));
-  const { rowSpacing, photoSpacing, cappedIntervalSpeed } = calculateCoverage(params);
+  const normalizedParams = {
+    ...params,
+    photoIntervalSec: safePhotoIntervalSec,
+    gimbalPitch: safeGimbalPitch,
+  };
+
+  const { rowSpacing, photoSpacing, cappedIntervalSpeed } = calculateCoverage(normalizedParams);
 
   const effectiveSpeed =
     params.photoMode === 'interval' && params.autoSpeedForInterval
@@ -320,8 +332,8 @@ export function generatePolygonGridWaypoints(
           : index === 0
             ? 'startIntervalPhoto'
             : 'none',
-      photoIntervalSec: params.photoIntervalSec,
-      gimbalPitch: params.gimbalPitch,
+      photoIntervalSec: safePhotoIntervalSec,
+      gimbalPitch: safeGimbalPitch,
     };
   });
 }

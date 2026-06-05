@@ -19,6 +19,16 @@ interface PolygonGridPanelProps {
   onGenerate: (waypoints: Waypoint[]) => void;
 }
 
+type PolygonGridStats = ReturnType<typeof estimatePolygonGridStats>;
+
+function clampNumber(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+
+  return Math.min(max, Math.max(min, value));
+}
+
 export default function PolygonGridPanel({
   polygonPoints,
   polygonDrawActive,
@@ -34,36 +44,91 @@ export default function PolygonGridPanel({
     speed: 5,
     gimbalPitch: -90,
     photoMode: 'waypoint',
-    photoIntervalSec: 2,
+    photoIntervalSec: 3,
     autoSpeedForInterval: true,
   });
 
   function setNumber(key: keyof PolygonGridParams, value: number) {
-    setParams((prev) => ({ ...prev, [key]: value }));
+    setParams((prev) => {
+      if (!Number.isFinite(value)) {
+        return prev;
+      }
+
+      if (key === 'height') {
+        return { ...prev, height: clampNumber(value, 1, 500) };
+      }
+
+      if (key === 'overlap') {
+        return { ...prev, overlap: clampNumber(value, 0, 94) };
+      }
+
+      if (key === 'direction') {
+        const normalized = ((value % 360) + 360) % 360;
+        return { ...prev, direction: normalized };
+      }
+
+      if (key === 'speed') {
+        return { ...prev, speed: clampNumber(value, 0.1, 15) };
+      }
+
+      if (key === 'gimbalPitch') {
+        return { ...prev, gimbalPitch: clampNumber(value, -90, 0) };
+      }
+
+      if (key === 'photoIntervalSec') {
+        return { ...prev, photoIntervalSec: clampNumber(value, 1, 10) };
+      }
+
+      return { ...prev, [key]: value };
+    });
   }
 
   function setPhotoMode(value: PolygonPhotoMode) {
     setParams((prev) => ({ ...prev, photoMode: value }));
   }
 
+  function handleNumberInput(
+    key: keyof PolygonGridParams,
+    rawValue: string,
+    fallback: number,
+  ) {
+    if (rawValue === '') {
+      setNumber(key, fallback);
+      return;
+    }
+
+    setNumber(key, Number(rawValue));
+  }
+
   const canGenerate = polygonPoints.length >= 3 && !polygonDrawActive;
 
-  const stats = canGenerate
-    ? estimatePolygonGridStats(polygonPoints, params)
-    : null;
+  let stats: PolygonGridStats | null = null;
+  let statsError: string | null = null;
+
+  if (canGenerate) {
+    try {
+      stats = estimatePolygonGridStats(polygonPoints, params);
+    } catch (error) {
+      statsError = error instanceof Error ? error.message : String(error);
+    }
+  }
 
   function handleGenerate() {
     if (!canGenerate) {
       return;
     }
 
-    const waypoints = generatePolygonGridWaypoints(polygonPoints, params);
+    try {
+      const waypoints = generatePolygonGridWaypoints(polygonPoints, params);
 
-    if (waypoints.length > 200) {
-      return;
+      if (waypoints.length > 200) {
+        return;
+      }
+
+      onGenerate(waypoints);
+    } catch {
+      // Validation errors are already shown through statsError during rendering.
     }
-
-    onGenerate(waypoints);
   }
 
   return (
@@ -116,7 +181,7 @@ export default function PolygonGridPanel({
             value={params.height}
             min={10}
             max={500}
-            onChange={(e) => setNumber('height', Number(e.target.value))}
+            onChange={(e) => handleNumberInput('height', e.target.value, 10)}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none"
           />
         </div>
@@ -128,7 +193,7 @@ export default function PolygonGridPanel({
             value={params.overlap}
             min={30}
             max={90}
-            onChange={(e) => setNumber('overlap', Number(e.target.value))}
+            onChange={(e) => handleNumberInput('overlap', e.target.value, 30)}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none"
           />
         </div>
@@ -140,7 +205,7 @@ export default function PolygonGridPanel({
             value={params.direction}
             min={0}
             max={359}
-            onChange={(e) => setNumber('direction', Number(e.target.value))}
+            onChange={(e) => handleNumberInput('direction', e.target.value, 0)}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none"
           />
         </div>
@@ -154,7 +219,7 @@ export default function PolygonGridPanel({
             max={15}
             step={0.5}
             disabled={params.photoMode === 'interval' && params.autoSpeedForInterval}
-            onChange={(e) => setNumber('speed', Number(e.target.value))}
+            onChange={(e) => handleNumberInput('speed', e.target.value, 1)}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none disabled:opacity-50"
           />
         </div>
@@ -196,7 +261,7 @@ export default function PolygonGridPanel({
                 min={1}
                 max={10}
                 step={0.5}
-                onChange={(e) => setNumber('photoIntervalSec', Number(e.target.value))}
+                onChange={(e) => handleNumberInput('photoIntervalSec', e.target.value, 1)}
                 className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none"
               />
             </div>
@@ -217,6 +282,12 @@ export default function PolygonGridPanel({
           </>
         )}
       </div>
+
+      {statsError && (
+        <div className="bg-red-900/30 border border-red-700 rounded-lg p-2 text-xs text-red-400">
+          {statsError}
+        </div>
+      )}
 
       {stats && (
         <div className="bg-[#0f1117] rounded-lg p-3 border border-gray-700 text-xs text-gray-400 grid grid-cols-2 gap-1">
@@ -264,7 +335,7 @@ export default function PolygonGridPanel({
 
       <button
         onClick={handleGenerate}
-        disabled={!canGenerate || (stats?.waypointCount ?? 0) > 200}
+        disabled={!canGenerate || Boolean(statsError) || (stats?.waypointCount ?? 0) > 200}
         className="w-full py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         Generate polygon grid

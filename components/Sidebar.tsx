@@ -317,7 +317,7 @@ export default function Sidebar({
   const uniqueZoneCount = groupCollisionsByZone(collisions).length;
 
   const content = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-y-auto">
       {/* Address search — above everything else */}
       <div className="px-3 pt-3 pb-2 flex-shrink-0">
         <SearchBar onFlyTo={onFlyTo} />
@@ -405,8 +405,8 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Panel content — scrollable */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 min-h-0">
+      {/* Panel content */}
+      <div className="px-3 py-3 flex-shrink-0">
         {/* ── Photo mode panels ── */}
         {appMode === 'photo' && missionType === 'waypoints' && (
           <WaypointPanel

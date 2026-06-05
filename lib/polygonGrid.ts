@@ -11,19 +11,22 @@ interface Point {
   y: number;
 }
 
-interface ScanSegment {
-  y: number;
-  points: Point[];
-}
+export type PolygonPhotoMode = 'waypoint' | 'interval';
 
 export interface PolygonGridParams {
   height: number;
   overlap: number;
   direction: number;
   speed: number;
+  gimbalPitch: number;
+  photoMode: PolygonPhotoMode;
+  photoIntervalSec: number;
+  autoSpeedForInterval: boolean;
 }
 
 const EARTH_RADIUS_M = 6378137;
+const DEFAULT_FOOTPRINT_FACTOR = 1.4;
+const MAX_AUTO_SPEED_MS = 12;
 
 function polygonCentroid(points: LatLng[]): LatLng {
   const sum = points.reduce(
@@ -93,7 +96,7 @@ function segmentHorizontalIntersection(a: Point, b: Point, y: number): number | 
   const minY = Math.min(a.y, b.y);
   const maxY = Math.max(a.y, b.y);
 
-  // y >= maxY исключаем, чтобы вершины полигона не считались дважды.
+  // Do not count the upper vertex twice.
   if (y < minY || y >= maxY) {
     return null;
   }
@@ -150,15 +153,16 @@ function deduplicateSequentialPoints(points: Point[], minDistanceM = 0.5): Point
   return result;
 }
 
-function buildScanSegments(
+function buildRows(
   rotatedPolygon: Point[],
   rowSpacing: number,
   photoSpacing: number,
-): ScanSegment[] {
+  photoMode: PolygonPhotoMode,
+): Point[][] {
   const box = bbox(rotatedPolygon);
-  const segments: ScanSegment[] = [];
+  const rows: Point[][] = [];
 
-  // Отступаем на половину шага, чтобы первая линия не шла прямо по границе.
+  // Offset inward so the first scan-line does not sit exactly on the polygon boundary.
   const startY = box.minY + rowSpacing / 2;
 
   for (let y = startY; y <= box.maxY; y += rowSpacing) {
@@ -177,8 +181,11 @@ function buildScanSegments(
 
     intersections.sort((a, b) => a - b);
 
-    // Каждая пара пересечений — один рабочий проход внутри полигона.
-    // У вогнутого полигона на одной строке может быть несколько проходов.
+    const rowPoints: Point[] = [];
+
+    // Every pair of intersections is one inside-polygon segment.
+    // In interval mode we only keep segment endpoints; in waypoint mode we place
+    // photo waypoints along the segment according to photoSpacing.
     for (let i = 0; i + 1 < intersections.length; i += 2) {
       const x1 = intersections[i];
       const x2 = intersections[i + 1];
@@ -189,62 +196,73 @@ function buildScanSegments(
 
       const start: Point = { x: x1, y };
       const end: Point = { x: x2, y };
-      const points = pointsAlongSegment(start, end, photoSpacing);
-      const cleanPoints = deduplicateSequentialPoints(points);
 
-      if (cleanPoints.length >= 2) {
-        segments.push({
-          y,
-          points: cleanPoints,
-        });
-      }
+      const segmentPoints =
+        photoMode === 'interval'
+          ? [start, end]
+          : pointsAlongSegment(start, end, photoSpacing);
+
+      rowPoints.push(...segmentPoints);
+    }
+
+    const cleanRow = deduplicateSequentialPoints(rowPoints);
+
+    if (cleanRow.length >= 2) {
+      rows.push(cleanRow);
     }
   }
 
-  // Сортировка снизу вверх; внутри одной строки слева направо.
-  segments.sort((a, b) => {
-    if (Math.abs(a.y - b.y) > 0.001) {
-      return a.y - b.y;
-    }
-
-    return a.points[0].x - b.points[0].x;
-  });
-
-  return segments;
+  return rows;
 }
 
-function appendSegmentFromNearestEnd(route: Point[], segmentPoints: Point[]) {
-  if (segmentPoints.length === 0) {
-    return;
-  }
-
-  if (route.length === 0) {
-    route.push(...segmentPoints);
-    return;
-  }
-
-  const last = route[route.length - 1];
-  const first = segmentPoints[0];
-  const end = segmentPoints[segmentPoints.length - 1];
-
-  const distanceToFirst = distance(last, first);
-  const distanceToEnd = distance(last, end);
-
-  if (distanceToEnd < distanceToFirst) {
-    route.push(...[...segmentPoints].reverse());
-  } else {
-    route.push(...segmentPoints);
-  }
-}
-
-function buildNearestRoute(segments: ScanSegment[]): Point[] {
+function buildSnakeRoute(rows: Point[][]): Point[] {
   const route: Point[] = [];
 
-  for (const segment of segments) {
-    appendSegmentFromNearestEnd(route, segment.points);
-  }
+  rows.forEach((rowPoints) => {
+    if (rowPoints.length === 0) {
+      return;
+    }
+
+    if (route.length === 0) {
+      route.push(...rowPoints);
+      return;
+    }
+
+    const last = route[route.length - 1];
+    const distanceToRowStart = distance(last, rowPoints[0]);
+    const distanceToRowEnd = distance(last, rowPoints[rowPoints.length - 1]);
+
+    if (distanceToRowEnd < distanceToRowStart) {
+      route.push(...[...rowPoints].reverse());
+    } else {
+      route.push(...rowPoints);
+    }
+  });
 
   return deduplicateSequentialPoints(route);
+}
+
+function calculateCoverage(params: PolygonGridParams) {
+  const footprintAcrossM = params.height * DEFAULT_FOOTPRINT_FACTOR;
+  const footprintAlongM = params.height * DEFAULT_FOOTPRINT_FACTOR;
+
+  const overlapFactor = 1 - params.overlap / 100;
+  const rowSpacing = footprintAcrossM * overlapFactor;
+  const photoSpacing = footprintAlongM * overlapFactor;
+
+  const interval = params.photoIntervalSec > 0 ? params.photoIntervalSec : 2;
+  const intervalSpeed = photoSpacing / interval;
+
+  return {
+    rowSpacing,
+    photoSpacing,
+    intervalSpeed,
+    cappedIntervalSpeed: Math.min(intervalSpeed, MAX_AUTO_SPEED_MS),
+  };
+}
+
+export function getPolygonGridDerivedParams(params: PolygonGridParams) {
+  return calculateCoverage(params);
 }
 
 export function generatePolygonGridWaypoints(
@@ -267,26 +285,23 @@ export function generatePolygonGridWaypoints(
     throw new Error('Speed must be greater than zero');
   }
 
+  if (params.photoIntervalSec <= 0) {
+    throw new Error('Photo interval must be greater than zero');
+  }
+
   const origin = polygonCentroid(polygon);
   const angleRad = (params.direction * Math.PI) / 180;
-
   const localPolygon = polygon.map((p) => latLngToMeters(p, origin));
-
-  // Поворачиваем полигон так, чтобы линии облёта стали горизонтальными.
   const rotatedPolygon = localPolygon.map((p) => rotatePoint(p, -angleRad));
+  const { rowSpacing, photoSpacing, cappedIntervalSpeed } = calculateCoverage(params);
 
-  // Упрощённая модель покрытия камеры.
-  // height = 60 м, overlap = 70:
-  // footprint = 60 * 1.4 = 84 м
-  // spacing = 84 * 0.3 = 25.2 м
-  const footprintAcrossM = params.height * 1.4;
-  const footprintAlongM = params.height * 1.4;
+  const effectiveSpeed =
+    params.photoMode === 'interval' && params.autoSpeedForInterval
+      ? cappedIntervalSpeed
+      : params.speed;
 
-  const rowSpacing = footprintAcrossM * (1 - params.overlap / 100);
-  const photoSpacing = footprintAlongM * (1 - params.overlap / 100);
-
-  const segments = buildScanSegments(rotatedPolygon, rowSpacing, photoSpacing);
-  const route = buildNearestRoute(segments);
+  const rows = buildRows(rotatedPolygon, rowSpacing, photoSpacing, params.photoMode);
+  const route = buildSnakeRoute(rows);
 
   return route.map((p, index) => {
     const unrotated = rotatePoint(p, angleRad);
@@ -297,10 +312,16 @@ export function generatePolygonGridWaypoints(
       lat: latLng.lat,
       lng: latLng.lng,
       height: params.height,
-      speed: params.speed,
+      speed: effectiveSpeed,
       waitTime: 0,
-      cameraAction: 'photo',
-      gimbalPitch: -75,
+      cameraAction:
+        params.photoMode === 'waypoint'
+          ? 'photo'
+          : index === 0
+            ? 'startIntervalPhoto'
+            : 'none',
+      photoIntervalSec: params.photoIntervalSec,
+      gimbalPitch: params.gimbalPitch,
     };
   });
 }
@@ -310,6 +331,7 @@ export function estimatePolygonGridStats(
   params: PolygonGridParams,
 ) {
   const waypoints = generatePolygonGridWaypoints(polygon, params);
+  const { photoSpacing, intervalSpeed, cappedIntervalSpeed } = calculateCoverage(params);
 
   let distanceM = 0;
 
@@ -323,11 +345,16 @@ export function estimatePolygonGridStats(
     distanceM += Math.sqrt(p.x * p.x + p.y * p.y);
   }
 
-  const timeMin = params.speed > 0 ? distanceM / (params.speed * 60) : 0;
+  const speed = waypoints[0]?.speed ?? params.speed;
+  const timeMin = speed > 0 ? distanceM / (speed * 60) : 0;
 
   return {
     waypointCount: waypoints.length,
     distanceM: Math.round(distanceM),
     timeMin: timeMin.toFixed(1),
+    photoSpacingM: Math.round(photoSpacing),
+    intervalSpeedMs: Number(intervalSpeed.toFixed(1)),
+    cappedIntervalSpeedMs: Number(cappedIntervalSpeed.toFixed(1)),
+    effectiveSpeedMs: Number(speed.toFixed(1)),
   };
 }

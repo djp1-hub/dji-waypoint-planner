@@ -1,7 +1,12 @@
 // Type definitions for the DJI Waypoint Planner application
 
 /** Camera action that can be triggered at a waypoint */
-export type CameraAction = 'none' | 'photo' | 'startVideo' | 'stopVideo';
+export type CameraAction =
+  | 'none'
+  | 'photo'
+  | 'startVideo'
+  | 'stopVideo'
+  | 'startIntervalPhoto';
 
 /** Mission types supported by the application */
 export type MissionType =
@@ -29,6 +34,8 @@ export interface Waypoint {
   waitTime: number;
   /** Camera action to perform at this waypoint */
   cameraAction: CameraAction;
+  /** Optional photo interval in seconds for interval shooting actions */
+  photoIntervalSec?: number;
   /** Optional gimbal pitch angle in degrees (0 = horizontal, -90 = straight down) */
   gimbalPitch?: number;
   /** Optional fixed heading angle in degrees (0 = North, 90 = East, clockwise) */

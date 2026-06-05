@@ -232,6 +232,38 @@ function takePhotoActionGroupXml(wp: Waypoint, index: number): string {
         </wpml:actionGroup>`;
 }
 
+function intervalPhotoActionGroupXml(
+  wp: Waypoint,
+  index: number,
+  lastIndex: number,
+): string {
+  if (wp.cameraAction !== 'startIntervalPhoto') {
+    return '';
+  }
+
+  const interval = wp.photoIntervalSec && wp.photoIntervalSec > 0
+    ? wp.photoIntervalSec
+    : 2;
+
+  return `        <wpml:actionGroup>
+          <wpml:actionGroupId>${index * 10 + 6}</wpml:actionGroupId>
+          <wpml:actionGroupStartIndex>${index}</wpml:actionGroupStartIndex>
+          <wpml:actionGroupEndIndex>${lastIndex}</wpml:actionGroupEndIndex>
+          <wpml:actionGroupMode>parallel</wpml:actionGroupMode>
+          <wpml:actionTrigger>
+            <wpml:actionTriggerType>multipleTiming</wpml:actionTriggerType>
+            <wpml:actionTriggerParam>${interval}</wpml:actionTriggerParam>
+          </wpml:actionTrigger>
+          <wpml:action>
+            <wpml:actionId>${index * 10 + 6}</wpml:actionId>
+            <wpml:actionActuatorFunc>takePhoto</wpml:actionActuatorFunc>
+            <wpml:actionActuatorFuncParam>
+              <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
+            </wpml:actionActuatorFuncParam>
+          </wpml:action>
+        </wpml:actionGroup>`;
+}
+
 function startRecordActionGroupXml(wp: Waypoint, index: number): string {
   if (wp.cameraAction !== 'startVideo') {
     return '';
@@ -292,15 +324,18 @@ function actionGroupsXml(
   }
 
   groups.push(takePhotoActionGroupXml(wp, index));
+  groups.push(intervalPhotoActionGroupXml(wp, index, lastIndex));
   groups.push(startRecordActionGroupXml(wp, index));
   groups.push(stopRecordActionGroupXml(wp, index));
 
   return groups.filter(Boolean).join('\n');
 }
 
-function waypointGimbalHeadingParamXml(): string {
+function waypointGimbalHeadingParamXml(wp: Waypoint): string {
+  const pitch = typeof wp.gimbalPitch === 'number' ? wp.gimbalPitch : -90;
+
   return `        <wpml:waypointGimbalHeadingParam>
-          <wpml:waypointGimbalPitchAngle>0</wpml:waypointGimbalPitchAngle>
+          <wpml:waypointGimbalPitchAngle>${pitch}</wpml:waypointGimbalPitchAngle>
           <wpml:waypointGimbalYawAngle>0</wpml:waypointGimbalYawAngle>
         </wpml:waypointGimbalHeadingParam>`;
 }
@@ -327,7 +362,7 @@ ${headingParamXml(mission, wp, index)}
 ${turnParamXml()}
         <wpml:useStraightLine>1</wpml:useStraightLine>
 ${actionGroupsXml(wp, index, lastIndex)}
-${waypointGimbalHeadingParamXml()}
+${waypointGimbalHeadingParamXml(wp)}
       </Placemark>`;
 }
 
@@ -367,14 +402,8 @@ export async function exportKMZ(
   const droneEnumValue = getDroneEnumValue(droneName);
   const zip = new JSZip();
 
-  const wpmz = zip.folder('wpmz');
-
-  if (!wpmz) {
-    throw new Error('Failed to create wpmz folder');
-  }
-
-  wpmz.file('template.kml', generateTemplateKML(mission, droneEnumValue));
-  wpmz.file('waylines.wpml', generateWaylinesWPML(mission, droneEnumValue));
+  zip.file('wpmz/template.kml', generateTemplateKML(mission, droneEnumValue));
+  zip.file('wpmz/waylines.wpml', generateWaylinesWPML(mission, droneEnumValue));
 
   const blob = await zip.generateAsync({
     type: 'blob',

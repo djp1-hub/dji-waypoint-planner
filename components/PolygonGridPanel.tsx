@@ -5,6 +5,7 @@ import { Waypoint } from '@/lib/types';
 import {
   LatLng,
   PolygonGridParams,
+  PolygonPhotoMode,
   estimatePolygonGridStats,
   generatePolygonGridWaypoints,
 } from '@/lib/polygonGrid';
@@ -31,10 +32,18 @@ export default function PolygonGridPanel({
     overlap: 70,
     direction: 0,
     speed: 5,
+    gimbalPitch: -90,
+    photoMode: 'waypoint',
+    photoIntervalSec: 2,
+    autoSpeedForInterval: true,
   });
 
-  function set(key: keyof PolygonGridParams, value: number) {
+  function setNumber(key: keyof PolygonGridParams, value: number) {
     setParams((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function setPhotoMode(value: PolygonPhotoMode) {
+    setParams((prev) => ({ ...prev, photoMode: value }));
   }
 
   const canGenerate = polygonPoints.length >= 3 && !polygonDrawActive;
@@ -107,7 +116,7 @@ export default function PolygonGridPanel({
             value={params.height}
             min={10}
             max={500}
-            onChange={(e) => set('height', Number(e.target.value))}
+            onChange={(e) => setNumber('height', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none"
           />
         </div>
@@ -119,7 +128,7 @@ export default function PolygonGridPanel({
             value={params.overlap}
             min={30}
             max={90}
-            onChange={(e) => set('overlap', Number(e.target.value))}
+            onChange={(e) => setNumber('overlap', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none"
           />
         </div>
@@ -131,7 +140,7 @@ export default function PolygonGridPanel({
             value={params.direction}
             min={0}
             max={359}
-            onChange={(e) => set('direction', Number(e.target.value))}
+            onChange={(e) => setNumber('direction', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none"
           />
         </div>
@@ -144,10 +153,69 @@ export default function PolygonGridPanel({
             min={1}
             max={15}
             step={0.5}
-            onChange={(e) => set('speed', Number(e.target.value))}
-            className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none"
+            disabled={params.photoMode === 'interval' && params.autoSpeedForInterval}
+            onChange={(e) => setNumber('speed', Number(e.target.value))}
+            className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none disabled:opacity-50"
           />
         </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-gray-500 text-xs">Camera pitch (°)</label>
+          <select
+            value={params.gimbalPitch}
+            onChange={(e) => setNumber('gimbalPitch', Number(e.target.value))}
+            className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none"
+          >
+            <option value={-90}>-90° Nadir / mapping</option>
+            <option value={-80}>-80° 3D surface</option>
+            <option value={-75}>-75° 3D surface</option>
+            <option value={-65}>-65° Oblique</option>
+            <option value={-60}>-60° 3D object</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-gray-500 text-xs">Photo mode</label>
+          <select
+            value={params.photoMode}
+            onChange={(e) => setPhotoMode(e.target.value as PolygonPhotoMode)}
+            className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none"
+          >
+            <option value="waypoint">Photo at every waypoint</option>
+            <option value="interval">Interval photo by time</option>
+          </select>
+        </div>
+
+        {params.photoMode === 'interval' && (
+          <>
+            <div className="flex flex-col gap-1">
+              <label className="text-gray-500 text-xs">Photo interval (sec)</label>
+              <input
+                type="number"
+                value={params.photoIntervalSec}
+                min={1}
+                max={10}
+                step={0.5}
+                onChange={(e) => setNumber('photoIntervalSec', Number(e.target.value))}
+                className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+
+            <label className="col-span-2 flex items-center gap-2 text-xs text-gray-400">
+              <input
+                type="checkbox"
+                checked={params.autoSpeedForInterval}
+                onChange={(e) =>
+                  setParams((prev) => ({
+                    ...prev,
+                    autoSpeedForInterval: e.target.checked,
+                  }))
+                }
+              />
+              Auto speed for interval photos
+            </label>
+          </>
+        )}
       </div>
 
       {stats && (
@@ -158,6 +226,21 @@ export default function PolygonGridPanel({
           <span>
             Time: <span className="text-white">~{stats.timeMin} min</span>
           </span>
+          <span>
+            Photo spacing: <span className="text-white">~{stats.photoSpacingM} m</span>
+          </span>
+          <span>
+            Speed: <span className="text-white">{stats.effectiveSpeedMs} m/s</span>
+          </span>
+          {params.photoMode === 'interval' && (
+            <span className="col-span-2">
+              Interval speed target:{' '}
+              <span className="text-white">{stats.intervalSpeedMs} m/s</span>
+              {stats.intervalSpeedMs > stats.cappedIntervalSpeedMs && (
+                <span className="text-amber-400"> capped to {stats.cappedIntervalSpeedMs} m/s</span>
+              )}
+            </span>
+          )}
           <span className="col-span-2">
             Waypoints:{' '}
             <span className={stats.waypointCount > 200 ? 'text-red-400' : 'text-green-400'}>
@@ -169,7 +252,13 @@ export default function PolygonGridPanel({
 
       {stats && stats.waypointCount > 200 && (
         <div className="bg-red-900/30 border border-red-700 rounded-lg p-2 text-xs text-red-400">
-          DJI Fly waypoint limit exceeded. Increase height, reduce overlap, or use a smaller polygon.
+          DJI Fly waypoint limit exceeded. Increase height, reduce overlap, switch to interval photos, or use a smaller polygon.
+        </div>
+      )}
+
+      {params.photoMode === 'interval' && (
+        <div className="bg-amber-900/20 border border-amber-700 rounded-lg p-2 text-xs text-amber-300">
+          Interval photo mode is experimental for DJI Fly. Reliable mode is “Photo at every waypoint”.
         </div>
       )}
 

@@ -300,7 +300,7 @@ export function generatePolygonGridWaypoints(
       speed: params.speed,
       waitTime: 0,
       cameraAction: 'photo',
-      gimbalPitch: -90,
+      gimbalPitch: -75,
     };
   });
 }

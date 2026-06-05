@@ -54,7 +54,7 @@ export default function RocketPanel({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-gray-400 text-xs leading-relaxed">
-        Dron vystřelí kolmo nahoru z místa. Gimbal míří strmě dolů po celou dobu — dramatický &quot;rocket shot&quot; z filmů.
+        The drone climbs vertically from one point. The gimbal points steeply downward throughout the shot.
       </p>
 
       {/* Position selector */}
@@ -71,17 +71,17 @@ export default function RocketPanel({
           }`}
         >
           {isSelectingPos
-            ? 'Klikni na mapu...'
+            ? 'Click on the map...'
             : pos
             ? `Pozice: ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`
-            : 'Vyber pozici na mape'}
+            : 'Select position on map'}
         </button>
       </div>
 
       {/* Parameters */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Výška startu (m)</label>
+          <label className="text-gray-400 text-xs">Start height (m)</label>
           <input
             type="number"
             value={startHeight}
@@ -93,7 +93,7 @@ export default function RocketPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Výška konce (m)</label>
+          <label className="text-gray-400 text-xs">End height (m)</label>
           <input
             type="number"
             value={endHeight}
@@ -105,7 +105,7 @@ export default function RocketPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Rychlost stoupání (m/s)</label>
+          <label className="text-gray-400 text-xs">Climb speed (m/s)</label>
           <input
             type="number"
             value={speed}
@@ -121,11 +121,11 @@ export default function RocketPanel({
       {/* Info box */}
       <div className="bg-[#0f1117] rounded-lg px-3 py-2 text-xs text-gray-400 border border-gray-700">
         <div className="flex justify-between">
-          <span>Výškový rozdíl</span>
+          <span>Height difference</span>
           <span className="text-white">{info.diff} m</span>
         </div>
         <div className="flex justify-between mt-1">
-          <span>Gimbal (pevný)</span>
+          <span>Gimbal (fixed)</span>
           <span className="text-white">{GIMBAL_PITCH}°</span>
         </div>
         <div className="flex justify-between mt-1">

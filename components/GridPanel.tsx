@@ -152,7 +152,7 @@ export default function GridPanel({ gridCorners, drawStep, onStartDraw, onGenera
             SV: {gridCorners.ne[0].toFixed(4)}, {gridCorners.ne[1].toFixed(4)}
           </p>
         ) : (
-          <p className="text-gray-600 text-xs">Zatim nevybrano</p>
+          <p className="text-gray-600 text-xs">Not selected yet</p>
         )}
         <button
           onClick={onStartDraw}
@@ -162,32 +162,32 @@ export default function GridPanel({ gridCorners, drawStep, onStartDraw, onGenera
               : 'bg-[#1a1d27] border-gray-600 text-gray-300 hover:border-blue-500'
           }`}
         >
-          {drawStep === 'idle' ? 'Kreslit oblast' : drawStep === 'sw' ? 'Klikni na 1. roh...' : 'Klikni na 2. roh...'}
+          {drawStep === 'idle' ? 'Draw area' : drawStep === 'sw' ? 'Click 1st corner...' : 'Click 2nd corner...'}
         </button>
       </div>
 
       {/* Parameters */}
       <div className="grid grid-cols-2 gap-2">
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Výška letu (m)</label>
+          <label className="text-gray-500 text-xs">Flight height (m)</label>
           <input type="number" value={params.height} min={10} max={500}
             onChange={(e) => set('height', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Překryv (%)</label>
+          <label className="text-gray-500 text-xs">Overlap (%)</label>
           <input type="number" value={params.overlap} min={30} max={90}
             onChange={(e) => set('overlap', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Směr řad (°)</label>
+          <label className="text-gray-500 text-xs">Row direction (°)</label>
           <input type="number" value={params.direction} min={0} max={359}
             onChange={(e) => set('direction', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Rychlost (m/s)</label>
+          <label className="text-gray-500 text-xs">Speed (m/s)</label>
           <input type="number" value={params.speed} min={1} max={15} step={0.5}
             onChange={(e) => set('speed', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
@@ -204,20 +204,20 @@ export default function GridPanel({ gridCorners, drawStep, onStartDraw, onGenera
         return (
           <>
             <div className="bg-[#0f1117] rounded-lg p-3 border border-gray-700 text-xs text-gray-400 grid grid-cols-2 gap-1">
-              <span>Řady: <span className="text-white">{stats.numRows}</span></span>
+              <span>Rows: <span className="text-white">{stats.numRows}</span></span>
               <span>Fotky: <span className="text-white">~{stats.photos}</span></span>
               <span>Trasa: <span className="text-white">{(stats.distanceM / 1000).toFixed(2)} km</span></span>
-              <span>Čas: <span className="text-white">~{stats.timeMin} min</span></span>
+              <span>Time: <span className="text-white">~{stats.timeMin} min</span></span>
               <span className="col-span-2">Waypointy: <span className={wpColor}>{stats.waypointCount} / 200</span></span>
             </div>
             {stats.waypointCount > 200 && (
               <div className="bg-red-900/30 border border-red-700 rounded-lg p-2 text-xs text-red-400">
-                Překročen limit 200 waypointů. Sniž překryv nebo zmenši oblast.
+                Waypoint limit of 200 exceeded. Reduce overlap or make the area smaller.
               </div>
             )}
             {stats.waypointCount > 150 && stats.waypointCount <= 200 && (
               <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-2 text-xs text-yellow-400">
-                Blížíš se limitu DJI Fly (200 waypointů).
+                Approaching DJI Fly limit (200 waypoints).
               </div>
             )}
           </>

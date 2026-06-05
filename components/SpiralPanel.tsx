@@ -116,13 +116,13 @@ export default function SpiralPanel({ mapCenter, onGenerate }: SpiralPanelProps)
       {/* Turns + Speed */}
       <div className="grid grid-cols-2 gap-2">
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Počet otáček</label>
+          <label className="text-gray-500 text-xs">Number of turns</label>
           <input type="number" value={params.turns} min={1} max={20} step={0.5}
             onChange={(e) => set('turns', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Rychlost (m/s)</label>
+          <label className="text-gray-500 text-xs">Speed (m/s)</label>
           <input type="number" value={params.speed} min={1} max={15} step={0.5}
             onChange={(e) => set('speed', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
@@ -137,7 +137,7 @@ export default function SpiralPanel({ mapCenter, onGenerate }: SpiralPanelProps)
             params.direction === 1 ? 'bg-blue-600 border-blue-600 text-white' : 'bg-[#0f1117] border-gray-700 text-gray-400 hover:text-white'
           }`}
         >
-          CW (po směru)
+          CW (clockwise)
         </button>
         <button
           onClick={() => set('direction', -1)}

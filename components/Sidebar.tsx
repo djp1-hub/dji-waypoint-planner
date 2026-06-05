@@ -31,25 +31,25 @@ import { DataRegion } from '@/lib/dataRegion';
 import { severityClasses } from '@/lib/severityColor';
 import CollisionPanel from './CollisionPanel';
 
-const PHOTO_TABS: { type: MissionType; label: string }[] = [
-  { type: 'waypoints', label: 'Body' },
-  { type: 'spiral', label: 'Spirala' },
-  { type: 'grid', label: 'Grid' },
-  { type: 'polygonGrid', label: 'Polygon' },
-  { type: 'orbit', label: 'Orbit' },
-  { type: 'facade', label: 'Fasada' },
+const PHOTO_TABS: { type: MissionType; labelKey: string }[] = [
+  { type: 'waypoints', labelKey: 'mission.waypoints' },
+  { type: 'spiral', labelKey: 'mission.spiral' },
+  { type: 'grid', labelKey: 'mission.grid' },
+  { type: 'polygonGrid', labelKey: 'mission.polygonGrid' },
+  { type: 'orbit', labelKey: 'mission.orbit' },
+  { type: 'facade', labelKey: 'mission.facade' },
 ];
 
-const FILM_TABS: { type: FilmType; label: string }[] = [
-  { type: 'dronie',      label: 'Dronie'     },
-  { type: 'reveal',      label: 'Reveal'     },
-  { type: 'topdown',     label: 'Top-down'   },
-  { type: 'craneup',     label: 'Crane Up'   },
-  { type: 'hyperlapse',  label: 'Hyperlapse' },
-  { type: 'arcshot',     label: 'Arc Shot'   },
-  { type: 'boomerang',   label: 'Boomerang'  },
-  { type: 'rocket',      label: 'Rocket'     },
-  { type: 'poisequence', label: 'POI Seq'    },
+const FILM_TABS: { type: FilmType; labelKey: string }[] = [
+  { type: 'dronie',      labelKey: 'film.dronie'     },
+  { type: 'reveal',      labelKey: 'film.reveal'     },
+  { type: 'topdown',     labelKey: 'film.topdown'   },
+  { type: 'craneup',     labelKey: 'film.craneup'   },
+  { type: 'hyperlapse',  labelKey: 'film.hyperlapse' },
+  { type: 'arcshot',     labelKey: 'film.arcshot'   },
+  { type: 'boomerang',   labelKey: 'film.boomerang'  },
+  { type: 'rocket',      labelKey: 'film.rocket'     },
+  { type: 'poisequence', labelKey: 'film.poisequence'    },
 ];
 
 interface SidebarProps {
@@ -202,7 +202,7 @@ function TabGroup<T extends string>({
               : 'bg-[#0f1117] text-gray-400 hover:text-white'
           }`}
         >
-          {tab.label}
+          {t(tab.labelKey)}
         </button>
       ))}
     </div>
@@ -630,7 +630,7 @@ export default function Sidebar({
                 </div>
               )}
               <div className="text-[10px] text-gray-600 mt-1">
-                Odhad pro DJI Mini 4 Pro, bez větru
+                {t('battery.mini4proEstimate')}
               </div>
             </div>
           </div>
@@ -643,7 +643,7 @@ export default function Sidebar({
           <div className="flex items-center justify-between gap-2">
             <span className={`text-xs font-medium ${sc.text}`}>
               {topSeverity === 'DANGER' ? '⛔' : topSeverity === 'WARNING' ? '⚠️' : 'ℹ️'}{' '}
-              {uniqueZoneCount} {uniqueZoneCount === 1 ? 'zóna' : uniqueZoneCount < 5 ? 'zóny' : 'zón'} {t('collision.zonesAffected')}
+              {uniqueZoneCount} {uniqueZoneCount === 1 ? t('collision.zone.one') : uniqueZoneCount < 5 ? t('collision.zone.few') : t('collision.zone.many')} {t('collision.zonesAffected')}
             </span>
             <button
               onClick={() => setShowCollisionPanel(true)}
@@ -753,12 +753,12 @@ export default function Sidebar({
           disabled={isExporting || waypoints.length === 0}
           className="w-full py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isExporting ? 'Exportuji...' : t('sidebar.export')}
+          {isExporting ? t('exporting') : t('sidebar.export')}
         </button>
         <button
           onClick={onExportLitchi}
           disabled={waypoints.length === 0}
-          title="Export pro Litchi app (starší DJI drony)"
+          title={t('export.litchiTitle')}
           className="w-full py-1.5 bg-[#0f1117] text-gray-400 text-xs rounded-lg border border-gray-700 hover:border-blue-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {t('sidebar.exportLitchi')}
@@ -812,7 +812,7 @@ export default function Sidebar({
           className="w-full bg-[#1a1d27] border-t border-gray-700 py-2 flex items-center justify-center gap-2"
         >
           <span className="text-gray-400 text-xs">
-            {mobileOpen ? 'Skryt panel' : `Panel mise (${waypoints.length} bodu)`}
+            {mobileOpen ? 'Hide panel' : `Mission panel (${waypoints.length} points)`}
           </span>
           <span className="text-gray-400">{mobileOpen ? '▼' : '▲'}</span>
         </button>

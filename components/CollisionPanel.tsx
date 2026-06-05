@@ -5,16 +5,17 @@
 
 import { Collision, CollisionGroup, Severity, groupCollisionsByZone, highestSeverity } from '@/lib/collisionDetection';
 import { severityClasses } from '@/lib/severityColor';
+import { useTranslation } from '@/lib/languageContext';
 
 interface CollisionPanelProps {
   collisions: Collision[];
   onClose: () => void;
 }
 
-const SEVERITY_CONFIG: Record<Severity, { label: string; icon: string; bg: string; border: string; text: string }> = {
-  DANGER:  { label: 'Zakázaná zóna',     icon: '⛔', bg: 'bg-red-900/30',    border: 'border-red-700',    text: 'text-red-300' },
-  WARNING: { label: 'Omezená zóna',      icon: '⚠️', bg: 'bg-orange-900/30', border: 'border-orange-700', text: 'text-orange-300' },
-  CAUTION: { label: 'Zvýšená opatrnost', icon: 'ℹ️', bg: 'bg-yellow-900/30', border: 'border-yellow-700', text: 'text-yellow-300' },
+const SEVERITY_CONFIG: Record<Severity, { labelKey: string; icon: string; bg: string; border: string; text: string }> = {
+  DANGER:  { labelKey: 'collision.severity.danger',  icon: '⛔', bg: 'bg-red-900/30',    border: 'border-red-700',    text: 'text-red-300' },
+  WARNING: { labelKey: 'collision.severity.warning', icon: '⚠️', bg: 'bg-orange-900/30', border: 'border-orange-700', text: 'text-orange-300' },
+  CAUTION: { labelKey: 'collision.severity.caution', icon: 'ℹ️', bg: 'bg-yellow-900/30', border: 'border-yellow-700', text: 'text-yellow-300' },
 };
 
 const SEVERITY_ORDER: Severity[] = ['DANGER', 'WARNING', 'CAUTION'];
@@ -26,6 +27,7 @@ function formatWpList(indices: number[]): string {
 }
 
 export default function CollisionPanel({ collisions, onClose }: CollisionPanelProps) {
+  const { t } = useTranslation();
   const top = highestSeverity(collisions);
   const sc = severityClasses(top);
 
@@ -53,16 +55,16 @@ export default function CollisionPanel({ collisions, onClose }: CollisionPanelPr
         <div className={`flex items-center justify-between px-4 py-3 border-b border-gray-700 rounded-t-xl ${sc.bg20}`}>
           <div>
             <h2 className="text-sm font-semibold text-white">
-              Varování kolizí ({zoneCount} {zoneCount === 1 ? 'zóna' : zoneCount < 5 ? 'zóny' : 'zón'})
+              {t('collision.title')} ({zoneCount} {zoneCount === 1 ? t('collision.zone.one') : zoneCount < 5 ? t('collision.zone.few') : t('collision.zone.many')})
             </h2>
             <p className="text-xs text-gray-400 mt-0.5">
-              {zoneCount} {zoneCount === 1 ? 'zóna' : zoneCount < 5 ? 'zóny' : 'zón'} v omezené oblasti
+              {zoneCount} {zoneCount === 1 ? t('collision.zone.one') : zoneCount < 5 ? t('collision.zone.few') : t('collision.zone.many')} {t('collision.zonesAffected')}
             </p>
           </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white transition-colors text-lg leading-none"
-            aria-label="Zavřít"
+            aria-label={t('collision.close')}
           >
             ✕
           </button>
@@ -77,7 +79,7 @@ export default function CollisionPanel({ collisions, onClose }: CollisionPanelPr
                 {/* Severity section header */}
                 <div className={`flex items-center gap-1.5 mb-2 text-xs font-semibold ${cfg.text}`}>
                   <span>{cfg.icon}</span>
-                  <span>{cfg.label}</span>
+                  <span>{t(cfg.labelKey)}</span>
                   <span className="text-gray-500 font-normal">({items.length})</span>
                 </div>
 
@@ -97,7 +99,7 @@ export default function CollisionPanel({ collisions, onClose }: CollisionPanelPr
                         </span>
                       </div>
                       <p className="text-gray-400 text-xs mb-1.5">
-                        Typ zóny: <span className="text-gray-300">{g.zoneType}</span>
+                        {t('collision.zoneType')}: <span className="text-gray-300">{g.zoneType}</span>
                       </p>
                       <p className="text-xs leading-relaxed text-gray-300">
                         {g.instructions}
@@ -113,7 +115,7 @@ export default function CollisionPanel({ collisions, onClose }: CollisionPanelPr
         {/* Footer */}
         <div className="px-4 py-3 border-t border-gray-700 flex-shrink-0">
           <p className="text-xs text-gray-500 mb-2">
-            Ověřte podmínky před letem:{' '}
+            {t('collision.verifyBeforeFlight')}{' '}
             <a
               href="https://www.dronemap.gov.cz"
               target="_blank"
@@ -127,7 +129,7 @@ export default function CollisionPanel({ collisions, onClose }: CollisionPanelPr
             onClick={onClose}
             className="w-full py-2 bg-[#1a1d27] text-gray-300 text-sm rounded-lg border border-gray-600 hover:border-gray-400 transition-colors"
           >
-            Zavřít
+            {t('collision.close')}
           </button>
         </div>
       </div>

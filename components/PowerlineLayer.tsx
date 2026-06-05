@@ -60,7 +60,7 @@ export default function PowerlineLayer({ active, dataRegion }: PowerlineLayerPro
 
       if (featureType === 'substation') {
         const name = (props.name as string) || 'Trafostanice';
-        return `<strong>${name}</strong><br/><span>⚡ Elektrická stanice</span><br/><em>${props.restriction}</em>`;
+        return `<strong>${name}</strong><br/><span>⚡ Electrical substation</span><br/><em>${props.restriction}</em>`;
       }
 
       const bufferM = props.bufferM as number;
@@ -71,7 +71,7 @@ export default function PowerlineLayer({ active, dataRegion }: PowerlineLayerPro
         HV110:  '35–110 kV',
       };
       const label = voltLabel[voltClass] ?? voltClass;
-      return `<strong>⚡ Elektrické vedení ${label}</strong><br/><span>Ochranné pásmo ${bufferM} m od osy</span><br/><em>${props.restriction}</em>`;
+      return `<strong>⚡ Power line ${label}</strong><br/><span>Protection zone ${bufferM} m from axis</span><br/><em>${props.restriction}</em>`;
     },
 
     hoverFillOpacity: 0.35,

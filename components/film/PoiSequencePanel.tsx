@@ -132,12 +132,12 @@ export default function PoiSequencePanel({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-gray-400 text-xs leading-relaxed">
-        Dron navštíví sérii zastávek kolem POI. Každá zastávka má vlastní vzdálenost a výšku. Nos dronu vždy míří na POI.
+        The drone visits a sequence of stops around the POI. Each stop has its own distance and height. The drone nose always points at the POI.
       </p>
 
       {/* POI selector */}
       <div className="flex flex-col gap-1">
-        <span className="text-gray-400 text-xs">Střed (POI)</span>
+        <span className="text-gray-400 text-xs">Center (POI)</span>
         <button
           onClick={onSelectPoi}
           className={`w-full py-2 text-xs rounded border transition-colors ${
@@ -149,16 +149,16 @@ export default function PoiSequencePanel({
           }`}
         >
           {isSelectingPoi
-            ? 'Klikni na mapu...'
+            ? 'Click on the map...'
             : poi
             ? `POI: ${poi.lat.toFixed(5)}, ${poi.lng.toFixed(5)}`
-            : 'Vyber POI na mape'}
+            : 'Select POI on map'}
         </button>
       </div>
 
       {/* Stop count selector */}
       <div className="flex flex-col gap-1">
-        <span className="text-gray-400 text-xs">Počet zastávek</span>
+        <span className="text-gray-400 text-xs">Number of stops</span>
         <div className="flex gap-1">
           {Array.from({ length: MAX_STOPS - MIN_STOPS + 1 }, (_, i) => i + MIN_STOPS).map(
             (n) => (
@@ -180,13 +180,13 @@ export default function PoiSequencePanel({
 
       {/* Per-stop table */}
       <div className="flex flex-col gap-1">
-        <span className="text-gray-400 text-xs">Parametry zastávek</span>
+        <span className="text-gray-400 text-xs">Stop parameters</span>
         <div className="bg-[#0f1117] rounded border border-gray-700 overflow-hidden">
           {/* Table header */}
           <div className="grid grid-cols-3 px-2 py-1 border-b border-gray-700">
-            <span className="text-gray-500 text-xs">Zastávka</span>
-            <span className="text-gray-500 text-xs text-center">Vzdál. (m)</span>
-            <span className="text-gray-500 text-xs text-center">Výška (m)</span>
+            <span className="text-gray-500 text-xs">Stop</span>
+            <span className="text-gray-500 text-xs text-center">Dist. (m)</span>
+            <span className="text-gray-500 text-xs text-center">Height (m)</span>
           </div>
           {/* Table rows */}
           {stops.slice(0, stopCount).map((stop, i) => {
@@ -228,7 +228,7 @@ export default function PoiSequencePanel({
       {/* Global parameters */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Rychlost mezi zastávkami (m/s)</label>
+          <label className="text-gray-400 text-xs">Speed between stops (m/s)</label>
           <input
             type="number"
             value={speed}
@@ -241,7 +241,7 @@ export default function PoiSequencePanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Pauza na každé zastávce (s)</label>
+          <label className="text-gray-400 text-xs">Pause at each stop (s)</label>
           <input
             type="number"
             value={pause}
@@ -260,7 +260,7 @@ export default function PoiSequencePanel({
           <span className="text-white">{stopCount}</span>
         </div>
         <div className="flex justify-between mt-1">
-          <span>Celková délka trasy</span>
+          <span>Total route length</span>
           <span className="text-white">{info.totalDist.toFixed(0)} m</span>
         </div>
         <div className="flex justify-between mt-1">

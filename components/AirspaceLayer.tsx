@@ -47,7 +47,7 @@ export default function AirspaceLayer({ active, dataRegion }: AirspaceLayerProps
     },
 
     tooltipHtml: (props) => {
-      const classLabel = props.icaoClass ? ` · třída ${props.icaoClass}` : '';
+      const classLabel = props.icaoClass ? ` · class ${props.icaoClass}` : '';
       return `<strong>${props.name}</strong><br/><span>${props.typeName}${classLabel}</span>`;
     },
 

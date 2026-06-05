@@ -4,6 +4,7 @@
 // Uses the geocoding abstraction layer (lib/geocoding.ts) — swap the provider there.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { searchAddress, GeocodingResult } from '@/lib/geocoding';
+import { useTranslation } from '@/lib/languageContext';
 
 interface SearchBarProps {
   /** Called when the user selects a result — map should fly to these coordinates */
@@ -11,6 +12,7 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({ onFlyTo }: SearchBarProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeocodingResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -47,13 +49,13 @@ export default function SearchBar({ onFlyTo }: SearchBarProps) {
     } catch (err) {
       // AbortError = request was superseded by a newer search — ignore silently
       if (err instanceof Error && err.name === 'AbortError') return;
-      setError('Chyba při načítání výsledků');
+      setError(t('search.loadError'));
       setResults([]);
       setIsOpen(true);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   /** Debounce input changes — search fires 500 ms after the user stops typing */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,7 +93,7 @@ export default function SearchBar({ onFlyTo }: SearchBarProps) {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [t]);
 
   // Clean up debounce timer and any in-flight request on unmount
   useEffect(() => {
@@ -99,7 +101,7 @@ export default function SearchBar({ onFlyTo }: SearchBarProps) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       abortRef.current?.abort();
     };
-  }, []);
+  }, [t]);
 
   const showDropdown = isOpen && (isLoading || results.length > 0 || error !== null || query.trim().length > 0);
 
@@ -129,7 +131,7 @@ export default function SearchBar({ onFlyTo }: SearchBarProps) {
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onFocus={() => { if (results.length > 0 || error) setIsOpen(true); }}
-          placeholder="Hledat adresu..."
+          placeholder={t('search.inputPlaceholder')}
           className="w-full bg-[#0f1117] text-white text-xs placeholder-gray-500 rounded-lg pl-8 pr-3 py-2 border border-gray-700 focus:outline-none focus:border-blue-500 transition-colors"
         />
 
@@ -147,7 +149,7 @@ export default function SearchBar({ onFlyTo }: SearchBarProps) {
           {/* Loading state */}
           {isLoading && (
             <div className="px-3 py-2 text-xs text-gray-400">
-              Hledám...
+              {t('search.searching')}
             </div>
           )}
 
@@ -161,7 +163,7 @@ export default function SearchBar({ onFlyTo }: SearchBarProps) {
           {/* Empty state */}
           {!isLoading && !error && results.length === 0 && query.trim().length > 0 && (
             <div className="px-3 py-2 text-xs text-gray-400">
-              Žádné výsledky
+              {t('search.noResultsInline')}
             </div>
           )}
 

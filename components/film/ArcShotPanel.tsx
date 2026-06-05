@@ -77,12 +77,12 @@ export default function ArcShotPanel({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-gray-400 text-xs leading-relaxed">
-        Dron krouží kolem POI a zároveň mění výšku. Výsledek je dramatický obletový záběr s měnící se perspektivou.
+        The drone circles around the POI while changing altitude. The result is a dramatic orbit shot with changing perspective.
       </p>
 
       {/* POI selector */}
       <div className="flex flex-col gap-1">
-        <span className="text-gray-400 text-xs">Střed oblouku (POI)</span>
+        <span className="text-gray-400 text-xs">Arc center (POI)</span>
         <button
           onClick={onSelectPoi}
           className={`w-full py-2 text-xs rounded border transition-colors ${
@@ -94,17 +94,17 @@ export default function ArcShotPanel({
           }`}
         >
           {isSelectingPoi
-            ? 'Klikni na mapu...'
+            ? 'Click on the map...'
             : poi
             ? `POI: ${poi.lat.toFixed(5)}, ${poi.lng.toFixed(5)}`
-            : 'Vyber POI na mape'}
+            : 'Select POI on map'}
         </button>
       </div>
 
       {/* Parameters */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Poloměr (m)</label>
+          <label className="text-gray-400 text-xs">Radius (m)</label>
           <input
             type="number"
             value={radius}
@@ -116,7 +116,7 @@ export default function ArcShotPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Výška startu (m)</label>
+          <label className="text-gray-400 text-xs">Start height (m)</label>
           <input
             type="number"
             value={startHeight}
@@ -128,7 +128,7 @@ export default function ArcShotPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Výška konce (m)</label>
+          <label className="text-gray-400 text-xs">End height (m)</label>
           <input
             type="number"
             value={endHeight}
@@ -141,7 +141,7 @@ export default function ArcShotPanel({
 
         {/* Laps selector */}
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Počet otáček</label>
+          <label className="text-gray-400 text-xs">Number of turns</label>
           <div className="flex gap-1">
             {LAPS_OPTIONS.map((opt) => (
               <button
@@ -161,7 +161,7 @@ export default function ArcShotPanel({
 
         {/* Direction */}
         <div className="flex flex-col gap-1">
-          <span className="text-gray-400 text-xs">Směr otáčení</span>
+          <span className="text-gray-400 text-xs">Rotation direction</span>
           <div className="flex gap-1">
             <button
               onClick={() => setDirection(1)}
@@ -171,7 +171,7 @@ export default function ArcShotPanel({
                   : 'bg-[#0f1117] border-gray-700 text-gray-400 hover:text-white'
               }`}
             >
-              CW (po směru)
+              CW (clockwise)
             </button>
             <button
               onClick={() => setDirection(-1)}
@@ -187,7 +187,7 @@ export default function ArcShotPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Rychlost (m/s)</label>
+          <label className="text-gray-400 text-xs">Speed (m/s)</label>
           <input
             type="number"
             value={speed}
@@ -203,15 +203,15 @@ export default function ArcShotPanel({
       {/* Info box */}
       <div className="bg-[#0f1117] rounded-lg px-3 py-2 text-xs text-gray-400 border border-gray-700">
         <div className="flex justify-between">
-          <span>Celkový úhel oblouku</span>
+          <span>Total arc angle</span>
           <span className="text-white">{info.arcDeg.toFixed(0)}°</span>
         </div>
         <div className="flex justify-between mt-1">
-          <span>Počet waypointů</span>
+          <span>Waypoint count</span>
           <span className="text-white">{info.totalPoints}</span>
         </div>
         <div className="flex justify-between mt-1">
-          <span>Délka trasy</span>
+          <span>Route length</span>
           <span className="text-white">{info.arcLength.toFixed(0)} m</span>
         </div>
         <div className="flex justify-between mt-1">

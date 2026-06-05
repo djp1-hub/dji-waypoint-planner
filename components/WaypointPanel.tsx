@@ -3,6 +3,7 @@
 // Panel for managing individual waypoints in a mission
 import { Waypoint, CameraAction } from '@/lib/types';
 import { Collision, Severity } from '@/lib/collisionDetection';
+import { useTranslation } from '@/lib/languageContext';
 
 interface WaypointPanelProps {
   waypoints: Waypoint[];
@@ -19,11 +20,11 @@ const SEVERITY_ICON: Record<Severity, string> = {
 };
 
 /** Label text for camera action options */
-const CAMERA_ACTION_LABELS: Record<CameraAction, string> = {
-  none: 'Žádná',
-  photo: 'Foto',
-  startVideo: 'Spustit video',
-  stopVideo: 'Zastavit video',
+const CAMERA_ACTION_LABEL_KEYS: Record<CameraAction, string> = {
+  none: 'waypoint.noneLabel',
+  photo: 'camera.photo',
+  startVideo: 'camera.startVideo',
+  stopVideo: 'camera.stopVideo',
 };
 
 export default function WaypointPanel({
@@ -33,11 +34,13 @@ export default function WaypointPanel({
   onClearAll,
   collisions,
 }: WaypointPanelProps) {
+  const { t } = useTranslation();
+
   if (waypoints.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500 text-sm">
-        <p>Klikni na mapu</p>
-        <p>pro přidání waypointu</p>
+        <p>{t('waypoint.clickMapToAdd')}</p>
+        <p>{t('waypoint.clickMapToAddLine2')}</p>
       </div>
     );
   }
@@ -81,7 +84,7 @@ export default function WaypointPanel({
             <button
               onClick={() => onDeleteWaypoint(wp.id)}
               className="text-gray-500 hover:text-red-400 transition-colors text-xs"
-              aria-label="Smazat waypoint"
+              aria-label="Delete waypoint"
             >
               x
             </button>
@@ -91,7 +94,7 @@ export default function WaypointPanel({
           <div className="grid grid-cols-3 gap-2">
             {/* Altitude */}
             <div className="flex flex-col gap-1">
-              <label className="text-gray-500 text-xs">Výška (m)</label>
+              <label className="text-gray-500 text-xs">{t('waypoint.height')}</label>
               <input
                 type="number"
                 value={wp.height}
@@ -104,7 +107,7 @@ export default function WaypointPanel({
 
             {/* Speed */}
             <div className="flex flex-col gap-1">
-              <label className="text-gray-500 text-xs">Rychlost (m/s)</label>
+              <label className="text-gray-500 text-xs">Speed (m/s)</label>
               <input
                 type="number"
                 value={wp.speed}
@@ -118,7 +121,7 @@ export default function WaypointPanel({
 
             {/* Wait time */}
             <div className="flex flex-col gap-1">
-              <label className="text-gray-500 text-xs">Čekání (s)</label>
+              <label className="text-gray-500 text-xs">{t('waypoint.wait')}</label>
               <input
                 type="number"
                 value={wp.waitTime}
@@ -140,7 +143,7 @@ export default function WaypointPanel({
             >
               {(Object.keys(CAMERA_ACTION_LABELS) as CameraAction[]).map((action) => (
                 <option key={action} value={action}>
-                  {CAMERA_ACTION_LABELS[action]}
+                  {t(CAMERA_ACTION_LABEL_KEYS[action])}
                 </option>
               ))}
             </select>
@@ -151,10 +154,10 @@ export default function WaypointPanel({
 
       {/* Clear all button */}
       <button
-        onClick={() => { if (confirm('Smazat všechny waypointy?')) onClearAll(); }}
+        onClick={() => { if (confirm(t('waypoint.deleteAllConfirm'))) onClearAll(); }}
         className="mt-2 w-full py-2 text-xs text-red-400 border border-red-900 rounded-lg hover:bg-red-900/30 transition-colors"
       >
-        Smazat vše
+        {t('waypoint.deleteAll')}
       </button>
     </div>
   );

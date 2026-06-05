@@ -3,7 +3,7 @@
 // Facade scan mission generator panel.
 // Modes:
 //   "Jedna strana"      — drone flies lawn-mower passes along one facade (A→B)
-//   "Celá budova 360°"  — user places 4 corners via normal map clicks; drone scans all 4 sides
+//   "Full building 360°"  — user places 4 corners via normal map clicks; drone scans all 4 sides
 import { useState } from 'react';
 import { Waypoint } from '@/lib/types';
 import { METERS_PER_DEG_LAT, generateId } from '@/lib/panelUtils';
@@ -297,7 +297,7 @@ export default function FacadePanel({
             mode === '360' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
           }`}
         >
-          Celá budova 360°
+          Full building 360°
         </button>
       </div>
 
@@ -330,14 +330,14 @@ export default function FacadePanel({
             }`}
           >
             {drawStep === 'idle'
-              ? (facadePoints ? 'Změnit fasádu' : 'Vybrat fasádu')
+              ? (facadePoints ? 'Change facade' : 'Select facade')
               : drawStep === 'a'
-              ? 'Klikni na levý kraj (A)...'
-              : 'Klikni na pravý kraj (B)...'}
+              ? 'Click the left edge (A)...'
+              : 'Click the right edge (B)...'}
           </button>
           {facadePoints && (
             <p className="mt-1 text-gray-600 text-xs">
-              Pokud je náhled za budovou, zkus prohodit pořadí kliknutí A↔B.
+              If the preview is behind the building, try swapping click order A↔B.
             </p>
           )}
         </div>
@@ -350,11 +350,11 @@ export default function FacadePanel({
             Rohy budovy: <span className="text-white">{Math.min(waypoints.length, 4)} / 4</span>
           </p>
           <p className="text-gray-600 text-xs leading-relaxed">
-            Klikni 4 rohy budovy na mapě dokola (po nebo proti směru hodin). Body lze přesouvat tažením.
+            Click 4 building corners on the map in order. Points can be moved by dragging.
           </p>
           {waypoints.length > 4 && (
             <p className="mt-2 text-yellow-500 text-xs">
-              Používám první 4 body jako rohy. Ostatní jsou ignorovány.
+              Using the first 4 points as corners. The rest are ignored.
             </p>
           )}
         </div>
@@ -363,31 +363,31 @@ export default function FacadePanel({
       {/* Parameters — shared by both modes */}
       <div className="grid grid-cols-2 gap-2">
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Vzdálenost (m)</label>
+          <label className="text-gray-500 text-xs">Distance (m)</label>
           <input type="number" value={params.distance} min={2} max={100}
             onChange={(e) => set('distance', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Překryv (%)</label>
+          <label className="text-gray-500 text-xs">Overlap (%)</label>
           <input type="number" value={params.overlap} min={30} max={90}
             onChange={(e) => set('overlap', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Výška startu (m)</label>
+          <label className="text-gray-500 text-xs">Start height (m)</label>
           <input type="number" value={params.startHeight} min={1} max={500}
             onChange={(e) => set('startHeight', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Výška konce (m)</label>
+          <label className="text-gray-500 text-xs">End height (m)</label>
           <input type="number" value={params.endHeight} min={1} max={500}
             onChange={(e) => set('endHeight', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-gray-500 text-xs">Rychlost (m/s)</label>
+          <label className="text-gray-500 text-xs">Speed (m/s)</label>
           <input type="number" value={params.speed} min={1} max={10} step={0.5}
             onChange={(e) => set('speed', Number(e.target.value))}
             className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none" />
@@ -406,20 +406,20 @@ export default function FacadePanel({
         return (
           <>
             <div className="bg-[#0f1117] rounded-lg p-3 border border-gray-700 text-xs text-gray-400 grid grid-cols-2 gap-1">
-              <span>Šířka fasády: <span className="text-white">{stats.facadeWidthM} m</span></span>
-              <span>Řady: <span className="text-white">{stats.numRows}</span></span>
+              <span>Facade width: <span className="text-white">{stats.facadeWidthM} m</span></span>
+              <span>Rows: <span className="text-white">{stats.numRows}</span></span>
               <span>Fotky: <span className="text-white">~{stats.totalPhotos}</span></span>
               <span>Trasa: <span className="text-white">{(stats.totalDistanceM / 1000).toFixed(2)} km</span></span>
               <span className="col-span-2">Waypointy: <span className={wpColor}>{stats.waypointCount} / 200</span></span>
             </div>
             {stats.waypointCount > 200 && (
               <div className="bg-red-900/30 border border-red-700 rounded-lg p-2 text-xs text-red-400">
-                Překročen limit 200 waypointů. Sniž překryv nebo změň rozsah výšek.
+                Waypoint limit of 200 exceeded. Reduce overlap or change the height range.
               </div>
             )}
             {stats.waypointCount > 150 && stats.waypointCount <= 200 && (
               <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-2 text-xs text-yellow-400">
-                Blížíš se limitu DJI Fly (200 waypointů).
+                Approaching DJI Fly limit (200 waypoints).
               </div>
             )}
           </>
@@ -438,12 +438,12 @@ export default function FacadePanel({
             </div>
             {stats360.waypointCount > 200 && (
               <div className="bg-red-900/30 border border-red-700 rounded-lg p-2 text-xs text-red-400">
-                Překročen limit 200 waypointů. Sniž překryv nebo změň rozsah výšek.
+                Waypoint limit of 200 exceeded. Reduce overlap or change the height range.
               </div>
             )}
             {stats360.waypointCount > 150 && stats360.waypointCount <= 200 && (
               <div className="bg-yellow-900/30 border border-yellow-700 rounded-lg p-2 text-xs text-yellow-400">
-                Blížíš se limitu DJI Fly (200 waypointů).
+                Approaching DJI Fly limit (200 waypoints).
               </div>
             )}
           </>

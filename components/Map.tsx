@@ -26,6 +26,7 @@ import WaterSourcesLayer from './WaterSourcesLayer';
 import RailwayLayer from './RailwayLayer';
 import RoadLayer from './RoadLayer';
 import PowerlineLayer from './PowerlineLayer';
+import { useTranslation } from '@/lib/languageContext';
 
 // Fix Leaflet's default icon URLs broken by webpack
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -91,6 +92,7 @@ function MapEventHandler({ onMapClick, onCenterChange }: EventHandlerProps) {
 }
 
 function LayersControl() {
+  const { t } = useTranslation();
   const map = useMap();
 
   useEffect(() => {
@@ -119,7 +121,7 @@ function LayersControl() {
         {
           '🗺 Mapa': osm,
           '🛰 Satelit': satellite,
-          '🏔 Terén': topo,
+          [t('map.layer.terrain')]: topo,
         },
         {},
         { position: 'topright' },
@@ -187,7 +189,7 @@ function LayersControl() {
       compass.remove();
       osm.remove();
     };
-  }, [map]);
+  }, [map, t]);
 
   return null;
 }

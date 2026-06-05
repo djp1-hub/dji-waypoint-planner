@@ -44,15 +44,15 @@ export default function RoadLayer({ active, dataRegion }: RoadLayerProps) {
       const bufferM   = props.bufferM as number;
 
       const classLabel: Record<string, string> = {
-        MOTORWAY:   'Dálnice',
-        EXPRESSWAY: 'Rychlostní silnice',
-        PRIMARY:    'Silnice I. třídy',
-        SECONDARY:  'Silnice II. třídy',
+        MOTORWAY:   'Motorway',
+        EXPRESSWAY: 'Expressway',
+        PRIMARY:    'Primary road',
+        SECONDARY:  'Secondary road',
       };
       const label = classLabel[roadClass] ?? roadClass;
       const title = ref ? `${label} ${ref}` : label;
 
-      return `<strong>🛣️ ${title}</strong><br/><span>Ochranné pásmo ${bufferM} m od osy</span><br/><em>${props.restriction}</em>`;
+      return `<strong>🛣️ ${title}</strong><br/><span>Protection zone ${bufferM} m from axis</span><br/><em>${props.restriction}</em>`;
     },
 
     // For polylines, hoverFillOpacity is ignored — weight changes on hover via Leaflet default

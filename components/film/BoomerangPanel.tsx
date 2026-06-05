@@ -65,12 +65,12 @@ export default function BoomerangPanel({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-gray-400 text-xs leading-relaxed">
-        Dron letí přímou trasou do cíle a vrátí se stejnou cestou zpět. Výsledek je plynulý záběr tam a zpět.
+        The drone flies a straight path to the target and returns the same way. The result is a smooth out-and-back shot.
       </p>
 
       {/* Start point selector */}
       <div className="flex flex-col gap-1">
-        <span className="text-gray-400 text-xs">Startovní bod</span>
+        <span className="text-gray-400 text-xs">Start point</span>
         <button
           onClick={onSelectStart}
           className={`w-full py-2 text-xs rounded border transition-colors ${
@@ -82,16 +82,16 @@ export default function BoomerangPanel({
           }`}
         >
           {selectStep === 'start'
-            ? 'Klikni na mapu...'
+            ? 'Click on the map...'
             : start
             ? `Start: ${start.lat.toFixed(5)}, ${start.lng.toFixed(5)}`
-            : 'Vyber startovní bod'}
+            : 'Select start point'}
         </button>
       </div>
 
       {/* End point selector */}
       <div className="flex flex-col gap-1">
-        <span className="text-gray-400 text-xs">Koncový bod</span>
+        <span className="text-gray-400 text-xs">End point</span>
         <button
           onClick={onSelectEnd}
           className={`w-full py-2 text-xs rounded border transition-colors ${
@@ -103,17 +103,17 @@ export default function BoomerangPanel({
           }`}
         >
           {selectStep === 'end'
-            ? 'Klikni na mapu...'
+            ? 'Click on the map...'
             : end
-            ? `Cíl: ${end.lat.toFixed(5)}, ${end.lng.toFixed(5)}`
-            : 'Vyber koncový bod'}
+            ? `Target: ${end.lat.toFixed(5)}, ${end.lng.toFixed(5)}`
+            : 'Select end point'}
         </button>
       </div>
 
       {/* Parameters */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Výška (m) – konstantní</label>
+          <label className="text-gray-400 text-xs">Height (m) – constant</label>
           <input
             type="number"
             value={height}
@@ -125,7 +125,7 @@ export default function BoomerangPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Rychlost (m/s)</label>
+          <label className="text-gray-400 text-xs">Speed (m/s)</label>
           <input
             type="number"
             value={speed}
@@ -150,7 +150,7 @@ export default function BoomerangPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Pauza v cíli (s)</label>
+          <label className="text-gray-400 text-xs">Pause at target (s)</label>
           <input
             type="number"
             value={pauseAtEnd}
@@ -166,11 +166,11 @@ export default function BoomerangPanel({
       {info && (
         <div className="bg-[#0f1117] rounded-lg px-3 py-2 text-xs text-gray-400 border border-gray-700">
           <div className="flex justify-between">
-            <span>Délka jedné cesty</span>
+            <span>One-way distance</span>
             <span className="text-white">{info.oneWayDist.toFixed(0)} m</span>
           </div>
           <div className="flex justify-between mt-1">
-            <span>Celková délka (×2)</span>
+            <span>Total distance (×2)</span>
             <span className="text-white">{info.totalDist.toFixed(0)} m</span>
           </div>
           <div className="flex justify-between mt-1">

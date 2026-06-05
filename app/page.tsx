@@ -15,6 +15,7 @@ import { checkWaypointCollisions, Collision } from '@/lib/collisionDetection';
 import { loadActiveDrone } from '@/lib/profileStore';
 import { generateId } from '@/lib/panelUtils';
 import { DEFAULT_DATA_REGION, DataRegion } from '@/lib/dataRegion';
+import { useTranslation } from '@/lib/languageContext';
 
 // Leaflet map must be loaded client-side only (it uses browser APIs)
 const MapView = dynamic(() => import('@/components/Map'), { ssr: false });
@@ -25,6 +26,7 @@ const Sidebar = dynamic(() => import('@/components/Sidebar'), { ssr: false });
 export type FilmType = 'dronie' | 'reveal' | 'topdown' | 'craneup' | 'hyperlapse' | 'arcshot' | 'boomerang' | 'rocket' | 'poisequence';
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const router = useRouter();
 
   // ── Active drone — loaded from localStorage, re-synced on window focus ───────
@@ -167,7 +169,7 @@ export default function HomePage() {
   }, []);
 
   // ── Load mission from /missions page — runs once on mount ───────
-  // When user clicks "Načíst" on /missions, the mission is stored in
+  // When user clicks "Load" on /missions, the mission is stored in
   // sessionStorage under 'loadMission'. This effect reads and applies it.
   useEffect(() => {
     try {
@@ -229,29 +231,29 @@ const handleShareMission = useCallback(async () => {
   try {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(url);
-      showToast('🔗 Odkaz zkopírován!');
+      showToast(t('toast.linkCopied'));
       return;
     }
 
     const copied = copyTextFallback(url);
 
     if (copied) {
-      showToast('🔗 Odkaz zkopírován!');
+      showToast(t('toast.linkCopied'));
       return;
     }
 
-    window.prompt('Zkopírujte odkaz ručně:', url);
+    window.prompt(t('share.prompt'), url);
   } catch {
     const copied = copyTextFallback(url);
 
     if (copied) {
-      showToast('🔗 Odkaz zkopírován!');
+      showToast(t('toast.linkCopied'));
       return;
     }
 
-    window.prompt('Zkopírujte odkaz ručně:', url);
+    window.prompt(t('share.prompt'), url);
   }
-}, [waypoints, missionType, appMode, showToast]);
+}, [waypoints, missionType, appMode, showToast, t]);
 
   // ── KMZ import ───────────────────────────────────────────────
 
@@ -274,14 +276,14 @@ const handleShareMission = useCallback(async () => {
       const avgLng = imported.reduce((sum, wp) => sum + wp.lng, 0) / imported.length;
       setFlyToTarget({ lat: avgLat, lng: avgLng, zoom: 15 });
 
-      showToast(`✅ Mise načtena – ${imported.length} waypointů`);
+      showToast(`✅ ${t('import.loaded')} – ${imported.length} ${t('preview.waypoints')}`);
     } catch (err) {
       showToast(`❌ ${String(err).replace('Error: ', '')}`, 4000);
     }
 
     // Reset file input so the same file can be re-imported if needed
     e.target.value = '';
-  }, [showToast]);
+  }, [showToast, t]);
 
   // ── Grid state ───────────────────────────────────────────────
   const [gridCorners, setGridCorners] = useState<{ sw: [number, number]; ne: [number, number] } | null>(null);
@@ -603,7 +605,7 @@ const handleShareMission = useCallback(async () => {
     const hasDanger = collisions.some((c) => c.severity === 'DANGER');
     if (hasDanger) {
       const proceed = window.confirm(
-        '⚠️ Mise obsahuje waypointy v zakázané zóně.\n\nPokud máš platné povolení, můžeš pokračovat. Chceš exportovat KMZ?'
+        t('export.dangerConfirm')
       );
       if (!proceed) return;
     }
@@ -612,7 +614,7 @@ const handleShareMission = useCallback(async () => {
       const effectiveMissionType: MissionType = appMode === 'film' ? 'film' : missionType;
       const mission: Mission = {
         id: 'export',
-        name: 'mise',
+        name: 'mission',
         type: effectiveMissionType,
         createdAt: new Date().toISOString(),
         waypoints,
@@ -625,7 +627,7 @@ const handleShareMission = useCallback(async () => {
     } finally {
       setIsExporting(false);
     }
-  }, [waypoints, missionType, appMode, poi, collisions]);
+  }, [waypoints, missionType, appMode, poi, collisions, t]);
 
   // ── Derived map props ────────────────────────────────────────
 

@@ -1,5 +1,8 @@
+'use client';
+
 // Guide page — step-by-step instructions for transferring a mission to DJI RC 2
 import Link from 'next/link';
+import { useTranslation } from '@/lib/languageContext';
 
 /** A single step in the transfer guide */
 interface Step {
@@ -11,43 +14,44 @@ interface Step {
 const STEPS: Step[] = [
   {
     number: 1,
-    title: 'Exportuj KMZ soubor',
+    title: 'Export KMZ file',
     description:
-      'V hlavní aplikaci nastav waypointy a klikni na „Exportovat KMZ". Soubor se stáhne do složky Stažené (Downloads) na tvém počítači.',
+      'Set the waypoints in the main app and click “Export KMZ”. The file will be downloaded to your computer.',
   },
   {
     number: 2,
-    title: 'Vytvoř dummy misi v DJI Fly',
+    title: 'Create a dummy mission in DJI Fly',
     description:
-      'Na RC 2 otevři aplikaci DJI Fly. Vytvoř novou prázdnou misi (např. jedním waypointem) a ulož ji. Tato mise bude nahrazena tou exportovanou.',
+      'Open DJI Fly on RC 2. Create a new empty mission, for example with one waypoint, and save it. This mission will be replaced by the exported one.',
   },
   {
     number: 3,
-    title: 'Připoj RC 2 k počítači',
+    title: 'Connect RC 2 to the computer',
     description:
-      'Připoj DJI RC 2 k počítači pomocí USB-C datového kabelu (ne nabíjecího). Na RC 2 potvrďte povolení přístupu k souborům, pokud se zobrazí dialog.',
+      'Connect DJI RC 2 to the computer using a USB-C data cable. Confirm file access on RC 2 if a dialog appears.',
   },
   {
     number: 4,
-    title: 'Najdi složku waypoint',
+    title: 'Find the waypoint folder',
     description:
-      'V průzkumníku Windows naviguj do: Internal storage → Android → data → dji.go.v5 → files → waypoint',
+      'In the file manager, open: Internal storage → Android → data → dji.go.v5 → files → waypoint',
   },
   {
     number: 5,
-    title: 'Nahraď KMZ soubor',
+    title: 'Replace the KMZ file',
     description:
-      'Najdi složku dummy mise (nejnovější datum). Uvnitř nalezneš .kmz soubor s náhodným názvem. Zkopíruj exportovaný .kmz soubor do této složky a ZACHOVEJ původní název souboru (jen nahraď obsah, nepřejmenuj).',
+      'Find the dummy mission folder, usually the newest one. Inside it there is a .kmz file with a random name. Copy the exported .kmz into that folder and keep the original file name; replace the contents, do not rename it.',
   },
   {
     number: 6,
-    title: 'Otevři misi v DJI Fly',
+    title: 'Open the mission in DJI Fly',
     description:
-      'Odpoj USB kabel a otevři DJI Fly na RC 2. Přejdi do sekce misií a otevři dummy misi. Trasa by měla odpovídat tvým waypointům. Před letem vždy zkontroluj výšky a trasu!',
+      'Disconnect the USB cable and open DJI Fly on RC 2. Go to the missions section and open the dummy mission. The route should match your waypoints. Always check heights and route before flight.',
   },
 ];
 
 export default function GuidePage() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-[#0f1117] text-white">
       {/* Page header */}
@@ -56,17 +60,16 @@ export default function GuidePage() {
           href="/"
           className="text-gray-400 hover:text-white transition-colors text-sm"
         >
-          ← Zpět na mapu
+          {t('app.backToMap')}
         </Link>
-        <h1 className="text-white font-bold">Návod: Přenos mise do DJI RC 2</h1>
+        <h1 className="text-white font-bold">{t('guide.pageTitle')}</h1>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-8">
         {/* Info box */}
         <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-4 mb-8">
           <p className="text-blue-300 text-sm">
-            DJI Mini 4 Pro nepodporuje přímé nahrávání misí přes aplikaci. Tento postup
-            umožní nahrát misi přes nahrazení souboru v úložišti RC 2.
+            {t('guide.intro')}
           </p>
         </div>
 
@@ -97,10 +100,9 @@ export default function GuidePage() {
 
         {/* Warning */}
         <div className="mt-8 bg-yellow-900/30 border border-yellow-700 rounded-lg p-4">
-          <p className="text-yellow-300 text-sm font-semibold mb-1">Důležité upozornění</p>
+          <p className="text-yellow-300 text-sm font-semibold mb-1">{t('guide.importantTitle')}</p>
           <p className="text-yellow-200/80 text-sm">
-            Vždy zkontroluj trasu a výšky před vzletem. Ujisti se, že letová oblast je
-            v souladu s platnou legislativou a není v zákazu létání (CTR, TRA apod.).
+            {t('guide.importantText')}
           </p>
         </div>
       </main>

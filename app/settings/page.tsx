@@ -12,6 +12,7 @@ import {
   loadActiveDroneId, setActiveDroneId,
 } from '@/lib/profileStore';
 import { Pilot, Drone } from '@/lib/types';
+import { useTranslation } from '@/lib/languageContext';
 
 // ── Blank form states ─────────────────────────────────────────────────────────
 
@@ -70,25 +71,25 @@ function PilotForm({
   return (
     <div className="bg-[#1a1d27] border border-gray-700 rounded-lg p-4 mt-4 space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Jméno" value={form.firstName} onChange={set('firstName')} placeholder="Jan" />
-        <Field label="Příjmení" value={form.lastName} onChange={set('lastName')} placeholder="Novák" />
+        <Field label={t('settings.firstName')} value={form.firstName} onChange={set('firstName')} placeholder="Jan" />
+        <Field label={t('settings.lastName')} value={form.lastName} onChange={set('lastName')} placeholder="Smith" />
         <Field label="E-mail" value={form.email} onChange={set('email')} type="email" placeholder="jan@example.com" />
-        <Field label="Telefon" value={form.phone} onChange={set('phone')} placeholder="+420 xxx xxx xxx" />
-        <Field label="Číslo provozovatele ÚCL (12 číslic)" value={form.uclOperatorId} onChange={set('uclOperatorId')} placeholder="CZE000000000" />
-        <Field label="Číslo průkazu (A1/A3 nebo A2)" value={form.licenseNumber} onChange={set('licenseNumber')} placeholder="CZE-A1A3-0000000" />
+        <Field label="Phone" value={form.phone} onChange={set('phone')} placeholder="+420 xxx xxx xxx" />
+        <Field label={t('settings.operatorNumber')} value={form.uclOperatorId} onChange={set('uclOperatorId')} placeholder="CZE000000000" />
+        <Field label={t('settings.licenseNumber')} value={form.licenseNumber} onChange={set('licenseNumber')} placeholder="CZE-A1A3-0000000" />
       </div>
       <div className="flex gap-2 pt-1">
         <button
           onClick={() => onSave(form)}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded font-medium transition-colors"
         >
-          Uložit
+          {t('btn.save')}
         </button>
         <button
           onClick={onCancel}
           className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded font-medium transition-colors"
         >
-          Zrušit
+          {t('btn.cancel')}
         </button>
       </div>
     </div>
@@ -118,12 +119,12 @@ function DroneForm({
   return (
     <div className="bg-[#1a1d27] border border-gray-700 rounded-lg p-4 mt-4 space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Název (zobrazení)" value={form.name} onChange={set('name')} placeholder="DJI Mini 4 Pro" />
-        <Field label="Výrobce" value={form.manufacturer} onChange={set('manufacturer')} placeholder="DJI" />
+        <Field label={t('settings.displayName')} value={form.name} onChange={set('name')} placeholder="DJI Mini 4 Pro" />
+        <Field label={t('settings.manufacturer')} value={form.manufacturer} onChange={set('manufacturer')} placeholder="DJI" />
         <Field label="Model" value={form.model} onChange={set('model')} placeholder="Mini 4 Pro" />
-        <Field label="Hmotnost (g)" value={form.weightG || ''} onChange={set('weightG')} type="number" placeholder="249" />
+        <Field label="Weight (g)" value={form.weightG || ''} onChange={set('weightG')} type="number" placeholder="249" />
         <div>
-          <label className="block text-xs text-gray-400 mb-1">Třída EU</label>
+          <label className="block text-xs text-gray-400 mb-1">{t('settings.euClass')}</label>
           <select
             value={form.droneClass}
             onChange={(e) => setForm((prev) => ({ ...prev, droneClass: e.target.value as Drone['droneClass'] }))}
@@ -134,24 +135,24 @@ function DroneForm({
             <option value="C2">C2 (900 g – 4 kg)</option>
           </select>
         </div>
-        <Field label="Výrobní číslo (S/N)" value={form.serialNumber} onChange={set('serialNumber')} placeholder="nepovinné" />
-        <Field label="Kapacita baterie (Wh)" value={form.batteryWh || ''} onChange={set('batteryWh')} type="number" placeholder="33.48" />
-        <Field label="Průměrná spotřeba (W)" value={form.avgPowerW || ''} onChange={set('avgPowerW')} type="number" placeholder="7" />
-        <Field label="Max výška (m)" value={form.maxAltitudeM || ''} onChange={set('maxAltitudeM')} type="number" placeholder="120" />
-        <Field label="Max rychlost (m/s)" value={form.maxSpeedMs || ''} onChange={set('maxSpeedMs')} type="number" placeholder="16" />
+        <Field label={t('settings.serialNumber')} value={form.serialNumber} onChange={set('serialNumber')} placeholder={t('settings.optional')} />
+        <Field label="Battery capacity (Wh)" value={form.batteryWh || ''} onChange={set('batteryWh')} type="number" placeholder="33.48" />
+        <Field label={t('settings.avgPower')} value={form.avgPowerW || ''} onChange={set('avgPowerW')} type="number" placeholder="7" />
+        <Field label={t('settings.maxHeight')} value={form.maxAltitudeM || ''} onChange={set('maxAltitudeM')} type="number" placeholder="120" />
+        <Field label="Max speed (m/s)" value={form.maxSpeedMs || ''} onChange={set('maxSpeedMs')} type="number" placeholder="16" />
       </div>
       <div className="flex gap-2 pt-1">
         <button
           onClick={() => onSave(form)}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded font-medium transition-colors"
         >
-          Uložit
+          {t('btn.save')}
         </button>
         <button
           onClick={onCancel}
           className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded font-medium transition-colors"
         >
-          Zrušit
+          {t('btn.cancel')}
         </button>
       </div>
     </div>
@@ -161,6 +162,7 @@ function DroneForm({
 // ── Main settings page ────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<'pilots' | 'drones'>('pilots');
 
   // ── Pilots state ──────────────────────────────────────────────
@@ -244,10 +246,10 @@ export default function SettingsPage() {
         {/* Header */}
         <div className="mb-6">
           <Link href="/" className="inline-flex items-center gap-1 text-blue-400 text-sm hover:text-blue-300 transition-colors">
-            ← Zpět na mapu
+            {t('app.backToMap')}
           </Link>
-          <h1 className="text-2xl font-bold mt-4 mb-1">Nastavení</h1>
-          <p className="text-gray-500 text-sm">Správa pilotů a dronů</p>
+          <h1 className="text-2xl font-bold mt-4 mb-1">{t('settings.title')}</h1>
+          <p className="text-gray-500 text-sm">{t('settings.manage')}</p>
         </div>
 
         {/* Tab switcher */}
@@ -270,7 +272,7 @@ export default function SettingsPage() {
         {tab === 'pilots' && (
           <div>
             {pilots.length === 0 && (
-              <p className="text-gray-500 text-sm mb-4">Žádný pilot zatím není uložen.</p>
+              <p className="text-gray-500 text-sm mb-4">{t('settings.noPilots')}</p>
             )}
 
             {/* Pilot list */}
@@ -285,12 +287,12 @@ export default function SettingsPage() {
                       <p className="font-semibold text-sm text-white">
                         {pilot.firstName} {pilot.lastName}
                         {activePilotId === pilot.id && (
-                          <span className="ml-2 text-xs bg-blue-600/30 border border-blue-500 text-blue-300 rounded px-1.5 py-0.5">Aktivní</span>
+                          <span className="ml-2 text-xs bg-blue-600/30 border border-blue-500 text-blue-300 rounded px-1.5 py-0.5">{t('settings.active')}</span>
                         )}
                       </p>
                       {pilot.email && <p className="text-xs text-gray-400 mt-0.5">{pilot.email}</p>}
-                      {pilot.uclOperatorId && <p className="text-xs text-gray-500">ÚCL: {pilot.uclOperatorId}</p>}
-                      {pilot.licenseNumber && <p className="text-xs text-gray-500">Průkaz: {pilot.licenseNumber}</p>}
+                      {pilot.uclOperatorId && <p className="text-xs text-gray-500">{t('settings.ucl')}: {pilot.uclOperatorId}</p>}
+                      {pilot.licenseNumber && <p className="text-xs text-gray-500">{t('settings.license')}: {pilot.licenseNumber}</p>}
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
                       {activePilotId !== pilot.id && (
@@ -305,13 +307,13 @@ export default function SettingsPage() {
                         onClick={() => setPilotFormMode({ edit: pilot })}
                         className="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
                       >
-                        Upravit
+                        Edit
                       </button>
                       <button
                         onClick={() => handleDeletePilot(pilot.id)}
                         className="text-xs px-2 py-1 rounded bg-red-900/30 border border-red-800 text-red-400 hover:bg-red-900/50 transition-colors"
                       >
-                        Smazat
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -340,7 +342,7 @@ export default function SettingsPage() {
                 onClick={() => setPilotFormMode('add')}
                 className="mt-4 w-full py-2 border border-dashed border-gray-600 rounded-lg text-sm text-gray-400 hover:text-white hover:border-gray-400 transition-colors"
               >
-                + Přidat pilota
+                {t('settings.addPilotButton')}
               </button>
             )}
           </div>
@@ -361,7 +363,7 @@ export default function SettingsPage() {
                       <p className="font-semibold text-sm text-white">
                         {drone.name}
                         {activeDroneId === drone.id && (
-                          <span className="ml-2 text-xs bg-blue-600/30 border border-blue-500 text-blue-300 rounded px-1.5 py-0.5">Aktivní</span>
+                          <span className="ml-2 text-xs bg-blue-600/30 border border-blue-500 text-blue-300 rounded px-1.5 py-0.5">{t('settings.active')}</span>
                         )}
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">
@@ -387,14 +389,14 @@ export default function SettingsPage() {
                         onClick={() => setDroneFormMode({ edit: drone })}
                         className="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors"
                       >
-                        Upravit
+                        Edit
                       </button>
                       <button
                         onClick={() => handleDeleteDrone(drone.id)}
                         disabled={drones.length <= 1}
                         className="text-xs px-2 py-1 rounded bg-red-900/30 border border-red-800 text-red-400 hover:bg-red-900/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       >
-                        Smazat
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -423,7 +425,7 @@ export default function SettingsPage() {
                 onClick={() => setDroneFormMode('add')}
                 className="mt-4 w-full py-2 border border-dashed border-gray-600 rounded-lg text-sm text-gray-400 hover:text-white hover:border-gray-400 transition-colors"
               >
-                + Přidat dron
+                {t('settings.addDroneButton')}
               </button>
             )}
           </div>

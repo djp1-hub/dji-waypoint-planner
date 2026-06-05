@@ -7,8 +7,10 @@ import Link from 'next/link';
 import MissionList from '@/components/MissionList';
 import { Mission } from '@/lib/types';
 import { loadMissions, deleteMission } from '@/lib/missionStore';
+import { useTranslation } from '@/lib/languageContext';
 
 export default function MissionsPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [missions, setMissions] = useState<Mission[]>([]);
 
@@ -38,9 +40,9 @@ export default function MissionsPage() {
           href="/"
           className="text-gray-400 hover:text-white transition-colors text-sm"
         >
-          ← Zpět na mapu
+          {t('app.backToMap')}
         </Link>
-        <h1 className="text-white font-bold">Uložené mise</h1>
+        <h1 className="text-white font-bold">{t('missions.savedTitle')}</h1>
       </header>
 
       {/* Mission list */}

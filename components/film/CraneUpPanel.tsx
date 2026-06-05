@@ -50,7 +50,7 @@ export default function CraneUpPanel({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-gray-400 text-xs leading-relaxed">
-        Dron stoupá vertikálně na jednom místě. Gimbal se plynule naklání od pohledu dolů (-60°) k horizontu (0°).
+        The drone climbs vertically at one point. The gimbal smoothly tilts from a downward view (-60°) to the horizon (0°).
       </p>
 
       {/* Position selector */}
@@ -67,17 +67,17 @@ export default function CraneUpPanel({
           }`}
         >
           {isSelectingPos
-            ? 'Klikni na mapu...'
+            ? 'Click on the map...'
             : pos
             ? `Pozice: ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`
-            : 'Vyber pozici na mape'}
+            : 'Select position on map'}
         </button>
       </div>
 
       {/* Parameters */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Výška startu (m)</label>
+          <label className="text-gray-400 text-xs">Start height (m)</label>
           <input
             type="number"
             value={startHeight}
@@ -89,7 +89,7 @@ export default function CraneUpPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Výška konce (m)</label>
+          <label className="text-gray-400 text-xs">End height (m)</label>
           <input
             type="number"
             value={endHeight}
@@ -101,7 +101,7 @@ export default function CraneUpPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Rychlost stoupání (m/s)</label>
+          <label className="text-gray-400 text-xs">Climb speed (m/s)</label>
           <input
             type="number"
             value={speed}
@@ -116,7 +116,7 @@ export default function CraneUpPanel({
 
       {/* Info */}
       <div className="bg-[#0f1117] rounded p-2 text-xs text-gray-400">
-        Gimbal: -60° → 0° · Horizontální pohyb: žádný · Video: start → stop
+        Gimbal: -60° → 0° · Horizontal movement: none · Video: start → stop
       </div>
 
       <button

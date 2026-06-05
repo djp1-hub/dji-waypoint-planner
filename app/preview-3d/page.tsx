@@ -8,6 +8,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Waypoint } from '@/lib/types';
+import { useTranslation } from '@/lib/languageContext';
 
 // Declare window.Cesium loaded from CDN — avoids repeated casts throughout the file.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,7 +54,7 @@ function loadCesiumScript(): Promise<void> {
     const script = document.createElement('script');
     script.src = `${CESIUM_CDN}/Cesium.js`;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Nepodařilo se načíst Cesium z CDN.'));
+    script.onerror = () => reject(new Error('Failed to load Cesium from CDN.'));
     document.head.appendChild(script);
   });
 }
@@ -61,6 +62,7 @@ function loadCesiumScript(): Promise<void> {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Preview3DPage() {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const viewerRef = useRef<any>(null);
@@ -71,7 +73,7 @@ export default function Preview3DPage() {
   const cameraChangedHandlerRef = useRef<any>(null);
 
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<string>('Načítám Cesium...');
+  const [loading, setLoading] = useState<string>(t('preview.loadingCesium'));
   const [mapReady, setMapReady] = useState(false);
   const [buildingsVisible, setBuildingsVisible] = useState(true);
   // heading: current camera heading in degrees (0 = north), drives the rotating compass
@@ -93,7 +95,7 @@ export default function Preview3DPage() {
     (async () => {
       try {
         // 1. Load Cesium from CDN via script tag
-        setLoading('Načítám Cesium...');
+        setLoading(t('preview.loadingCesium'));
         await loadCesiumScript();
         const Cesium = window.Cesium;
 
@@ -102,7 +104,7 @@ export default function Preview3DPage() {
         // 2. Read mission from localStorage
         const raw = localStorage.getItem('preview3d-mission');
         if (!raw) {
-          setLoadError('Žádná mise k zobrazení. Otevři 3D náhled z plánovacího panelu.');
+          setLoadError(t('preview.noMission'));
           return;
         }
 
@@ -115,13 +117,13 @@ export default function Preview3DPage() {
             timestamp: number;
           };
           if (!parsed.waypoints?.length) {
-            setLoadError('Mise neobsahuje žádné waypointy.');
+            setLoadError(t('preview.emptyMission'));
             return;
           }
           wps = parsed.waypoints;
           timestamp = parsed.timestamp;
         } catch {
-          setLoadError('Nepodařilo se načíst data mise.');
+          setLoadError(t('preview.loadFailed'));
           return;
         }
 
@@ -131,7 +133,7 @@ export default function Preview3DPage() {
         // 3. Fetch ground elevation from Open-Meteo for each waypoint.
         // Cesium World Terrain renders real elevation, but positions need
         // absolute MSL altitude = ground elevation + AGL waypoint height.
-        setLoading('Načítám výšková data...');
+        setLoading(t('preview.loadingTerrain'));
         let groundElevs: number[] = wps.map(() => 0);
         try {
           const lats = wps.map((wp: Waypoint) => wp.lat).join(',');
@@ -148,7 +150,7 @@ export default function Preview3DPage() {
         }
 
         // 4. Create Cesium Viewer with World Terrain + Bing satellite imagery
-        setLoading('Inicializuji 3D scénu...');
+        setLoading(t('preview.init3d'));
         viewer = new Cesium.Viewer(containerRef.current!, {
           terrainProvider: await Cesium.createWorldTerrainAsync({
             requestWaterMask: true,
@@ -266,7 +268,7 @@ export default function Preview3DPage() {
 
       } catch (err) {
         console.error('[preview-3d] Initialization error:', err);
-        setLoadError('Chyba při načítání 3D náhledu: ' + String(err));
+        setLoadError(t('preview.loadErrorPrefix') + String(err));
       }
     })();
 
@@ -361,13 +363,13 @@ export default function Preview3DPage() {
       <div style={{ minHeight: '100vh', background: '#0f1117', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center', maxWidth: 360, padding: '0 24px' }}>
           <p style={{ fontSize: 40, marginBottom: 16 }}>🔭</p>
-          <p style={{ color: '#fff', fontWeight: 600, marginBottom: 8 }}>3D náhled</p>
+          <p style={{ color: '#fff', fontWeight: 600, marginBottom: 8 }}>{t('preview.title')}</p>
           <p style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.6 }}>{loadError}</p>
           <button
             onClick={() => window.close()}
             style={{ marginTop: 24, padding: '8px 16px', background: '#1a1d27', border: '1px solid #4b5563', color: '#d1d5db', fontSize: 14, borderRadius: 6, cursor: 'pointer' }}
           >
-            ← Zavřít
+            {t('preview.close')}
           </button>
         </div>
       </div>
@@ -396,16 +398,16 @@ export default function Preview3DPage() {
           onClick={() => window.close()}
           className="px-3 py-1.5 bg-[#1a1d27]/90 backdrop-blur border border-gray-600 text-gray-300 text-xs rounded hover:border-blue-500 hover:text-white transition-colors"
         >
-          ← Zpět na mapu
+          {t('preview.backToMap')}
         </button>
 
         {missionMeta && (
           <div className="px-3 py-2 bg-[#1a1d27]/90 backdrop-blur border border-gray-700 rounded text-xs text-gray-400 leading-relaxed">
-            <div className="text-white font-medium mb-0.5">3D náhled mise</div>
-            <div>{missionMeta.count} waypointů</div>
+            <div className="text-white font-medium mb-0.5">{t('preview.missionTitle')}</div>
+            <div>{missionMeta.count} {t('preview.waypoints')}</div>
             {missionMeta.avgDisplayHeight > 0 && (
               <div className="text-gray-500 text-[10px] mt-0.5">
-                Výška v náhledu: {missionMeta.avgDisplayHeight} m AGL
+                {t('preview.displayHeight')}: {missionMeta.avgDisplayHeight} m AGL
               </div>
             )}
             <div className="text-gray-600 text-[10px] mt-1">
@@ -431,13 +433,13 @@ export default function Preview3DPage() {
             onClick={handleSideView}
             className="px-3 py-1.5 bg-[#1a1d27]/90 backdrop-blur border border-gray-600 text-gray-300 text-xs rounded hover:border-blue-500 hover:text-white transition-colors"
           >
-            👁 Boční pohled
+            {t('preview.sideView')}
           </button>
           <button
             onClick={handleBirdView}
             className="px-3 py-1.5 bg-[#1a1d27]/90 backdrop-blur border border-gray-600 text-gray-300 text-xs rounded hover:border-blue-500 hover:text-white transition-colors"
           >
-            🔭 Ptačí pohled
+            {t('preview.birdView')}
           </button>
         </div>
         <div className="flex gap-1">
@@ -458,7 +460,7 @@ export default function Preview3DPage() {
       {/* Double-click resets camera bearing to north (heading=0) with smooth animation.   */}
       {mapReady && (
         <div
-          title="Dvojklik pro srovnání na sever"
+          title={t('preview.compassTitle')}
           style={{
             position: 'absolute',
             bottom: 70,
@@ -525,7 +527,7 @@ export default function Preview3DPage() {
               <span className="w-3 h-3 rounded-full bg-orange-500 inline-block" />
               Waypoint
             </span>
-            <span className="text-gray-600">Orbit: levé tlač. · Pan: střední tlač. · Zoom: pravé tlač. / scroll</span>
+            <span className="text-gray-600">{t('preview.controls')}</span>
           </div>
         </div>
       )}

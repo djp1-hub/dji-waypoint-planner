@@ -110,12 +110,12 @@ export default function HyperlapsePanel({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-gray-400 text-xs leading-relaxed">
-        Dron letí po trase a fotí v pravidelných intervalech. Výsledek je časosběrné video z pohybu.
+        The drone flies along a route and takes photos at regular intervals. The result is a moving timelapse video.
       </p>
 
       {/* Start point selector */}
       <div className="flex flex-col gap-1">
-        <span className="text-gray-400 text-xs">Startovní bod</span>
+        <span className="text-gray-400 text-xs">Start point</span>
         <button
           onClick={onSelectStart}
           className={`w-full py-2 text-xs rounded border transition-colors ${
@@ -127,16 +127,16 @@ export default function HyperlapsePanel({
           }`}
         >
           {selectStep === 'start'
-            ? 'Klikni na mapu...'
+            ? 'Click on the map...'
             : startPos
             ? `Start: ${startPos.lat.toFixed(5)}, ${startPos.lng.toFixed(5)}`
-            : 'Vyber start na mape'}
+            : 'Select start on map'}
         </button>
       </div>
 
       {/* End point selector */}
       <div className="flex flex-col gap-1">
-        <span className="text-gray-400 text-xs">Koncový bod</span>
+        <span className="text-gray-400 text-xs">End point</span>
         <button
           onClick={onSelectEnd}
           className={`w-full py-2 text-xs rounded border transition-colors ${
@@ -148,17 +148,17 @@ export default function HyperlapsePanel({
           }`}
         >
           {selectStep === 'end'
-            ? 'Klikni na mapu...'
+            ? 'Click on the map...'
             : endPos
             ? `Konec: ${endPos.lat.toFixed(5)}, ${endPos.lng.toFixed(5)}`
-            : 'Vyber konec na mape'}
+            : 'Select end on map'}
         </button>
       </div>
 
       {/* Parameters */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Výška letu (m) — konstantní</label>
+          <label className="text-gray-400 text-xs">Flight height (m) — constant</label>
           <input
             type="number"
             value={height}
@@ -170,7 +170,7 @@ export default function HyperlapsePanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Rychlost (m/s)</label>
+          <label className="text-gray-400 text-xs">Speed (m/s)</label>
           <input
             type="number"
             value={speed}
@@ -183,7 +183,7 @@ export default function HyperlapsePanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Interval focení (s)</label>
+          <label className="text-gray-400 text-xs">Photo interval (s)</label>
           <input
             type="number"
             value={interval}
@@ -197,7 +197,7 @@ export default function HyperlapsePanel({
 
       {/* Gimbal direction */}
       <div className="flex flex-col gap-1">
-        <span className="text-gray-400 text-xs">Směr gimbalu</span>
+        <span className="text-gray-400 text-xs">Gimbal direction</span>
         <div className="flex gap-1">
           {(['forward', 'center', 'down'] as GimbalMode[]).map((mode) => {
             const labels: Record<GimbalMode, string> = {
@@ -225,7 +225,7 @@ export default function HyperlapsePanel({
       {/* Gimbal pitch (hidden when mode = down) */}
       {gimbalMode !== 'down' && (
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Náklon gimbalu (°) — 0 = horizont, -90 = dolů</label>
+          <label className="text-gray-400 text-xs">Gimbal pitch (°) — 0 = horizon, -90 = down</label>
           <input
             type="number"
             value={gimbalPitch}
@@ -249,22 +249,22 @@ export default function HyperlapsePanel({
           }`}
         >
           <div className="flex justify-between">
-            <span>Délka trasy</span>
+            <span>Route length</span>
             <span className="text-white">{info.distM.toFixed(0)} m</span>
           </div>
           <div className="flex justify-between mt-1">
-            <span>Počet fotek</span>
+            <span>Photo count</span>
             <span className={countColour(info.numPhotos)}>
               {info.numPhotos} / {MAX_WAYPOINTS}
             </span>
           </div>
           <div className="flex justify-between mt-1">
-            <span>Video při 25fps</span>
+            <span>Video at 25fps</span>
             <span className="text-white">~{info.videoSec.toFixed(1)} s</span>
           </div>
           {info.numPhotos > MAX_WAYPOINTS && (
             <p className="mt-2 text-red-400">
-              Příliš mnoho fotek. Zvyš rychlost nebo interval, nebo zkraď trasu.
+              Too many photos. Increase speed or interval, or shorten the route.
             </p>
           )}
         </div>

@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { Waypoint } from '@/lib/types';
 import { fetchElevations } from '@/lib/terrainFollowing';
+import { useTranslation } from '@/lib/languageContext';
 
 interface TerrainFollowingButtonProps {
   /** Current waypoints — used to fetch elevations and compute adjusted heights */
@@ -23,6 +24,7 @@ export default function TerrainFollowingButton({
   onApply,
   onReset,
 }: TerrainFollowingButtonProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,7 +53,7 @@ export default function TerrainFollowingButton({
 
       onApply(adjusted);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Neznámá chyba při načítání terénu.');
+      setError(err instanceof Error ? err.message : t('terrain.unknownError'));
     } finally {
       setLoading(false);
     }
@@ -62,13 +64,13 @@ export default function TerrainFollowingButton({
     return (
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-xs text-green-400">
-          <span>✓ Terrain following aktivní</span>
+          <span>{t('terrain.active')}</span>
         </div>
         <button
           onClick={onReset}
           className="w-full py-1.5 text-xs rounded border border-gray-600 bg-[#0f1117] text-gray-400 hover:border-gray-400 hover:text-white transition-colors"
         >
-          Resetovat výšky
+          {t('terrain.resetHeights')}
         </button>
       </div>
     );
@@ -96,7 +98,7 @@ export default function TerrainFollowingButton({
       disabled={loading || waypoints.length === 0}
       className="w-full py-1.5 bg-[#0f1117] text-gray-300 text-xs rounded border border-gray-600 hover:border-blue-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
-      {loading ? 'Načítám výšky terénu...' : '🏔 Přizpůsobit terénu'}
+      {loading ? t('common.loadingHeights') : t('terrain.apply')}
     </button>
   );
 }

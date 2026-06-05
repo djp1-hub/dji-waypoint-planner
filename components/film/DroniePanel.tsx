@@ -10,7 +10,7 @@ interface DroniePanelProps {
   startPos: { lat: number; lng: number } | null;
   /** Whether the user is currently selecting the start position */
   isSelectingStart: boolean;
-  /** Called when the user clicks "Vyber start na mapě" */
+  /** Called when the user clicks "Select start on map" */
   onSelectStart: () => void;
   /** Called with the generated waypoints */
   onGenerate: (waypoints: Waypoint[]) => void;
@@ -65,12 +65,12 @@ export default function DroniePanel({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-gray-400 text-xs leading-relaxed">
-        Dron letí dozadu a nahoru od subjektu. Gimbal se postupně naklání od horizontu dolů.
+        The drone flies backward and upward from the subject. The gimbal gradually tilts down from the horizon.
       </p>
 
       {/* Start position selector */}
       <div className="flex flex-col gap-1">
-        <span className="text-gray-400 text-xs">Startovní bod</span>
+        <span className="text-gray-400 text-xs">Start point</span>
         <button
           onClick={onSelectStart}
           className={`w-full py-2 text-xs rounded border transition-colors ${
@@ -82,17 +82,17 @@ export default function DroniePanel({
           }`}
         >
           {isSelectingStart
-            ? 'Klikni na mapu...'
+            ? 'Click on the map...'
             : startPos
             ? `Start: ${startPos.lat.toFixed(5)}, ${startPos.lng.toFixed(5)}`
-            : 'Vyber start na mape'}
+            : 'Select start on map'}
         </button>
       </div>
 
       {/* Parameters */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Výška startu (m)</label>
+          <label className="text-gray-400 text-xs">Start height (m)</label>
           <input
             type="number"
             value={startHeight}
@@ -104,7 +104,7 @@ export default function DroniePanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Výška konce (m)</label>
+          <label className="text-gray-400 text-xs">End height (m)</label>
           <input
             type="number"
             value={endHeight}
@@ -116,7 +116,7 @@ export default function DroniePanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Vzdálenost odletu (m)</label>
+          <label className="text-gray-400 text-xs">Pull-away distance (m)</label>
           <input
             type="number"
             value={distance}
@@ -128,7 +128,7 @@ export default function DroniePanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Směr letu (°) — 0=sever, 90=východ</label>
+          <label className="text-gray-400 text-xs">Flight direction (°) — 0=north, 90=east</label>
           <input
             type="number"
             value={bearing}
@@ -140,7 +140,7 @@ export default function DroniePanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Rychlost (m/s)</label>
+          <label className="text-gray-400 text-xs">Speed (m/s)</label>
           <input
             type="number"
             value={speed}

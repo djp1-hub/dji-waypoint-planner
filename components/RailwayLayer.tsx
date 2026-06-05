@@ -36,7 +36,7 @@ export default function RailwayLayer({ active, dataRegion }: RailwayLayerProps) 
 
     tooltipHtml: (props) => {
       const icon = props.tier === 'main' ? '🚂' : '🚋';
-      return `<strong>${props.name}</strong><br/><span>${icon} Pásmo ${props.bufferM} m od osy koleje</span><br/><em>${props.restriction}</em>`;
+      return `<strong>${props.name}</strong><br/><span>${icon} Buffer ${props.bufferM} m from track axis</span><br/><em>${props.restriction}</em>`;
     },
 
     // For polylines, hoverFillOpacity is ignored — increase weight on hover instead

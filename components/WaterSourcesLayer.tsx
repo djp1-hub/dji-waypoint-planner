@@ -35,7 +35,7 @@ export default function WaterSourcesLayer({ active, dataRegion }: WaterSourcesLa
     },
 
     tooltipHtml: (props) =>
-      `<strong>${props.name}</strong><br/><span>${props.tier === 'drinking' ? '💧 Pitná voda' : '🌊 Vodní nádrž'}</span><br/><em>${props.restriction}</em>`,
+      `<strong>${props.name}</strong><br/><span>${props.tier === 'drinking' ? '💧 Drinking water' : '🌊 Water reservoir'}</span><br/><em>${props.restriction}</em>`,
 
     hoverFillOpacity: 0.5,
   });

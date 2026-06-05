@@ -55,12 +55,12 @@ export default function TopDownPanel({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-gray-400 text-xs leading-relaxed">
-        Dron přelétá nad subjektem v konstantní výšce s kamerou namířenou přímo dolů (gimbal -90°).
+        The drone flies over the subject at constant altitude with the camera pointing straight down (gimbal -90°).
       </p>
 
       {/* Start selector */}
       <div className="flex flex-col gap-1">
-        <span className="text-gray-400 text-xs">Startovní bod</span>
+        <span className="text-gray-400 text-xs">Start point</span>
         <button
           onClick={onSelectStart}
           className={`w-full py-2 text-xs rounded border transition-colors ${
@@ -72,16 +72,16 @@ export default function TopDownPanel({
           }`}
         >
           {isSelectingStart
-            ? 'Klikni na mapu...'
+            ? 'Click on the map...'
             : startPos
             ? `Start: ${startPos.lat.toFixed(5)}, ${startPos.lng.toFixed(5)}`
-            : 'Vyber start na mape'}
+            : 'Select start on map'}
         </button>
       </div>
 
       {/* End selector */}
       <div className="flex flex-col gap-1">
-        <span className="text-gray-400 text-xs">Koncový bod</span>
+        <span className="text-gray-400 text-xs">End point</span>
         <button
           onClick={onSelectEnd}
           className={`w-full py-2 text-xs rounded border transition-colors ${
@@ -93,17 +93,17 @@ export default function TopDownPanel({
           }`}
         >
           {isSelectingEnd
-            ? 'Klikni na mapu...'
+            ? 'Click on the map...'
             : endPos
             ? `Konec: ${endPos.lat.toFixed(5)}, ${endPos.lng.toFixed(5)}`
-            : 'Vyber konec na mape'}
+            : 'Select end on map'}
         </button>
       </div>
 
       {/* Parameters */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Výška letu (m)</label>
+          <label className="text-gray-400 text-xs">Flight height (m)</label>
           <input
             type="number"
             value={height}
@@ -115,7 +115,7 @@ export default function TopDownPanel({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-gray-400 text-xs">Rychlost (m/s)</label>
+          <label className="text-gray-400 text-xs">Speed (m/s)</label>
           <input
             type="number"
             value={speed}
@@ -130,7 +130,7 @@ export default function TopDownPanel({
 
       {/* Info */}
       <div className="bg-[#0f1117] rounded p-2 text-xs text-gray-400">
-        Gimbal: -90° (přímo dolů) · Video: start → stop
+        Gimbal: -90° (straight down) · Video: start → stop
       </div>
 
       <button

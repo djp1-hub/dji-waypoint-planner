@@ -11,6 +11,11 @@ interface Point {
   y: number;
 }
 
+interface ScanSegment {
+  y: number;
+  points: Point[];
+}
+
 export interface PolygonGridParams {
   height: number;
   overlap: number;
@@ -88,7 +93,7 @@ function segmentHorizontalIntersection(a: Point, b: Point, y: number): number | 
   const minY = Math.min(a.y, b.y);
   const maxY = Math.max(a.y, b.y);
 
-  // y >= maxY исключаем специально, чтобы не считать вершину дважды.
+  // y >= maxY исключаем, чтобы вершины полигона не считались дважды.
   if (y < minY || y >= maxY) {
     return null;
   }
@@ -145,15 +150,15 @@ function deduplicateSequentialPoints(points: Point[], minDistanceM = 0.5): Point
   return result;
 }
 
-function buildRows(
+function buildScanSegments(
   rotatedPolygon: Point[],
   rowSpacing: number,
   photoSpacing: number,
-): Point[][] {
+): ScanSegment[] {
   const box = bbox(rotatedPolygon);
-  const rows: Point[][] = [];
+  const segments: ScanSegment[] = [];
 
-  // Небольшой отступ внутрь, чтобы первая линия не лежала прямо на границе полигона.
+  // Отступаем на половину шага, чтобы первая линия не шла прямо по границе.
   const startY = box.minY + rowSpacing / 2;
 
   for (let y = startY; y <= box.maxY; y += rowSpacing) {
@@ -172,11 +177,8 @@ function buildRows(
 
     intersections.sort((a, b) => a - b);
 
-    const rowPoints: Point[] = [];
-
-    // Каждая пара пересечений даёт один внутренний отрезок.
-    // Для выпуклого полигона будет одна пара.
-    // Для вогнутого — может быть несколько пар.
+    // Каждая пара пересечений — один рабочий проход внутри полигона.
+    // У вогнутого полигона на одной строке может быть несколько проходов.
     for (let i = 0; i + 1 < intersections.length; i += 2) {
       const x1 = intersections[i];
       const x2 = intersections[i + 1];
@@ -187,20 +189,62 @@ function buildRows(
 
       const start: Point = { x: x1, y };
       const end: Point = { x: x2, y };
+      const points = pointsAlongSegment(start, end, photoSpacing);
+      const cleanPoints = deduplicateSequentialPoints(points);
 
-      const segmentPoints = pointsAlongSegment(start, end, photoSpacing);
-
-      rowPoints.push(...segmentPoints);
-    }
-
-    const cleanRow = deduplicateSequentialPoints(rowPoints);
-
-    if (cleanRow.length >= 2) {
-      rows.push(cleanRow);
+      if (cleanPoints.length >= 2) {
+        segments.push({
+          y,
+          points: cleanPoints,
+        });
+      }
     }
   }
 
-  return rows;
+  // Сортировка снизу вверх; внутри одной строки слева направо.
+  segments.sort((a, b) => {
+    if (Math.abs(a.y - b.y) > 0.001) {
+      return a.y - b.y;
+    }
+
+    return a.points[0].x - b.points[0].x;
+  });
+
+  return segments;
+}
+
+function appendSegmentFromNearestEnd(route: Point[], segmentPoints: Point[]) {
+  if (segmentPoints.length === 0) {
+    return;
+  }
+
+  if (route.length === 0) {
+    route.push(...segmentPoints);
+    return;
+  }
+
+  const last = route[route.length - 1];
+  const first = segmentPoints[0];
+  const end = segmentPoints[segmentPoints.length - 1];
+
+  const distanceToFirst = distance(last, first);
+  const distanceToEnd = distance(last, end);
+
+  if (distanceToEnd < distanceToFirst) {
+    route.push(...[...segmentPoints].reverse());
+  } else {
+    route.push(...segmentPoints);
+  }
+}
+
+function buildNearestRoute(segments: ScanSegment[]): Point[] {
+  const route: Point[] = [];
+
+  for (const segment of segments) {
+    appendSegmentFromNearestEnd(route, segment.points);
+  }
+
+  return deduplicateSequentialPoints(route);
 }
 
 export function generatePolygonGridWaypoints(
@@ -232,8 +276,6 @@ export function generatePolygonGridWaypoints(
   const rotatedPolygon = localPolygon.map((p) => rotatePoint(p, -angleRad));
 
   // Упрощённая модель покрытия камеры.
-  // Для Mini 4 Pro это приближение, но для планировщика даёт предсказуемую сетку.
-  //
   // height = 60 м, overlap = 70:
   // footprint = 60 * 1.4 = 84 м
   // spacing = 84 * 0.3 = 25.2 м
@@ -243,34 +285,10 @@ export function generatePolygonGridWaypoints(
   const rowSpacing = footprintAcrossM * (1 - params.overlap / 100);
   const photoSpacing = footprintAlongM * (1 - params.overlap / 100);
 
-  const rows = buildRows(rotatedPolygon, rowSpacing, photoSpacing);
+  const segments = buildScanSegments(rotatedPolygon, rowSpacing, photoSpacing);
+  const route = buildNearestRoute(segments);
 
-const route: Point[] = [];
-
-rows.forEach((rowPoints) => {
-  if (rowPoints.length === 0) {
-    return;
-  }
-
-  if (route.length === 0) {
-    route.push(...rowPoints);
-    return;
-  }
-
-  const last = route[route.length - 1];
-  const firstDistance = distance(last, rowPoints[0]);
-  const lastDistance = distance(last, rowPoints[rowPoints.length - 1]);
-
-  if (lastDistance < firstDistance) {
-    route.push(...[...rowPoints].reverse());
-  } else {
-    route.push(...rowPoints);
-  }
-});
-
-const cleanRoute = deduplicateSequentialPoints(route);
-
-  return cleanRoute.map((p, index) => {
+  return route.map((p, index) => {
     const unrotated = rotatePoint(p, angleRad);
     const latLng = metersToLatLng(unrotated, origin);
 

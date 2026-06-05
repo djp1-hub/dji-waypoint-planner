@@ -21,6 +21,8 @@ import RocketPanel from './film/RocketPanel';
 import PoiSequencePanel from './film/PoiSequencePanel';
 import { Waypoint, MissionType, Drone } from '@/lib/types';
 import ActiveProfileBadge from './ActiveProfileBadge';
+import LanguageSwitcher from './LanguageSwitcher';
+import { useTranslation } from '@/lib/languageContext';
 import { FilmType } from '@/app/page';
 import { estimateBattery } from '@/lib/batteryEstimate';
 import { Collision, highestSeverity, groupCollisionsByZone } from '@/lib/collisionDetection';
@@ -285,6 +287,7 @@ export default function Sidebar({
   onFlyTo,
   activeDrone,
 }: SidebarProps) {
+  const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showCollisionPanel, setShowCollisionPanel] = useState(false);
   const [preview3dError, setPreview3dError] = useState<string | null>(null);
@@ -302,26 +305,29 @@ export default function Sidebar({
         <SearchBar onFlyTo={onFlyTo} />
       </div>
 
-      {/* App logo/title */}
+      {/* App logo/title + Language Switcher */}
       <div className="px-4 py-3 border-b border-gray-700 flex-shrink-0">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 mb-2">
           <div className="flex items-center gap-2">
-            <h1 className="text-white font-bold text-sm tracking-wide">DJI Waypoint Planner</h1>
+            <h1 className="text-white font-bold text-sm tracking-wide">{t('app.title')}</h1>
             {terrainActive && (
               <span className="text-xs text-green-400 bg-green-400/10 border border-green-700 rounded px-1.5 py-0.5">
-                🏔 Terrain
+                {t('sidebar.terrain')}
               </span>
             )}
           </div>
           <Link
             href="/settings"
-            title="Nastavení pilotů a dronů"
+            title={t('nav.settings')}
             className="text-gray-500 hover:text-gray-300 transition-colors text-base leading-none"
           >
             ⚙️
           </Link>
         </div>
-        <p className="text-gray-500 text-xs">Mini 4 Pro</p>
+        <div className="flex items-center justify-between">
+          <p className="text-gray-500 text-xs">Mini 4 Pro</p>
+          <LanguageSwitcher />
+        </div>
         <ActiveProfileBadge />
       </div>
 
@@ -336,7 +342,7 @@ export default function Sidebar({
                 : 'bg-[#0f1117] text-gray-400 hover:text-white'
             }`}
           >
-            Foto
+            {t('tab.photo')}
           </button>
           <button
             onClick={() => onAppModeChange('film')}
@@ -346,7 +352,7 @@ export default function Sidebar({
                 : 'bg-[#0f1117] text-gray-400 hover:text-white'
             }`}
           >
-            Film
+            {t('tab.film')}
           </button>
         </div>
       </div>
@@ -541,12 +547,12 @@ export default function Sidebar({
                 setPreview3dError(null);
                 window.open('/preview-3d', '_blank');
               } catch {
-                setPreview3dError('Nelze otevřít 3D náhled – zkus vypnout soukromé prohlížení.');
+                setPreview3dError(t('sidebar.3dPreview') + ' – ' + t('msg.error'));
               }
             }}
             className="w-full py-1.5 bg-[#0f1117] text-gray-300 text-xs rounded border border-gray-600 hover:border-purple-500 hover:text-white transition-colors"
           >
-            🔭 3D náhled
+            {t('sidebar.3dPreview')}
           </button>
           {preview3dError && (
             <p className="text-xs text-red-400 mt-1">{preview3dError}</p>
@@ -565,18 +571,18 @@ export default function Sidebar({
         return (
           <div className="px-3 pb-2 flex-shrink-0">
             <div className="bg-[#1a1d27] border border-gray-700 rounded-lg px-3 py-2.5">
-              <div className="text-xs font-semibold text-gray-400 mb-2">🔋 Odhad baterie</div>
+              <div className="text-xs font-semibold text-gray-400 mb-2">{t('battery.title')}</div>
               <div className="flex flex-col gap-1 text-xs text-gray-300 mb-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Vzdálenost:</span>
+                  <span className="text-gray-500">{t('battery.distance')}</span>
                   <span>{est.totalDistanceM.toLocaleString('cs-CZ')} m</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Doba letu:</span>
+                  <span className="text-gray-500">{t('battery.duration')}</span>
                   <span>~{est.flightTimeMin} min</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Spotřeba:</span>
+                  <span className="text-gray-500">{t('battery.estimated')}</span>
                   <span style={{ color: barColor }}>~{est.batteryPercent} %</span>
                 </div>
               </div>
@@ -589,7 +595,7 @@ export default function Sidebar({
               </div>
               {est.isWarning && (
                 <div className="text-[10px] text-red-400 mt-1">
-                  ⚠️ Mise překračuje bezpečnou hranici baterie!
+                  ⚠️ {t('battery.reserve')}
                 </div>
               )}
               <div className="text-[10px] text-gray-600 mt-1">
@@ -606,7 +612,7 @@ export default function Sidebar({
           <div className="flex items-center justify-between gap-2">
             <span className={`text-xs font-medium ${sc.text}`}>
               {topSeverity === 'DANGER' ? '⛔' : topSeverity === 'WARNING' ? '⚠️' : 'ℹ️'}{' '}
-              {uniqueZoneCount} {uniqueZoneCount === 1 ? 'zóna' : uniqueZoneCount < 5 ? 'zóny' : 'zón'} v omezené oblasti
+              {uniqueZoneCount} {uniqueZoneCount === 1 ? 'zóna' : uniqueZoneCount < 5 ? 'zóny' : 'zón'} {t('collision.zonesAffected')}
             </span>
             <button
               onClick={() => setShowCollisionPanel(true)}
@@ -699,12 +705,12 @@ export default function Sidebar({
             onClick={onSaveMission}
             className="flex-1 py-2 bg-[#1a1d27] text-white text-sm rounded-lg border border-gray-600 hover:border-blue-500 transition-colors"
           >
-            Uložit misi
+            {t('panel.saveMission')}
           </button>
           {waypoints.length > 0 && (
             <button
               onClick={onShareMission}
-              title="Zkopírovat odkaz na misi"
+              title={t('btn.share')}
               className="px-3 py-2 bg-[#1a1d27] text-gray-300 text-sm rounded-lg border border-gray-600 hover:border-green-500 hover:text-white transition-colors"
             >
               🔗
@@ -716,7 +722,7 @@ export default function Sidebar({
           disabled={isExporting || waypoints.length === 0}
           className="w-full py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isExporting ? 'Exportuji...' : 'Exportovat KMZ'}
+          {isExporting ? 'Exportuji...' : t('sidebar.export')}
         </button>
         <button
           onClick={onExportLitchi}
@@ -724,24 +730,24 @@ export default function Sidebar({
           title="Export pro Litchi app (starší DJI drony)"
           className="w-full py-1.5 bg-[#0f1117] text-gray-400 text-xs rounded-lg border border-gray-700 hover:border-blue-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Export Litchi CSV
+          {t('sidebar.exportLitchi')}
         </button>
       </div>
 
       {/* Navigation links */}
       <div className="px-3 pb-3 flex gap-3 flex-shrink-0 flex-wrap">
         <Link href="/missions" className="text-xs text-gray-500 hover:text-blue-400 transition-colors">
-          Uložené mise
+          {t('nav.missions')}
         </Link>
         <Link href="/guide" className="text-xs text-gray-500 hover:text-blue-400 transition-colors">
-          Návod RC 2
+          {t('nav.guide')}
         </Link>
         <Link href="/help" className="text-xs text-gray-500 hover:text-blue-400 transition-colors">
-          Nápověda
+          {t('nav.help')}
         </Link>
         {/* KMZ import — hidden file input triggered by label click */}
         <label className="text-xs text-gray-500 hover:text-blue-400 transition-colors cursor-pointer">
-          📂 Import KMZ
+          📂 {t('sidebar.import')}
           <input
             type="file"
             accept=".kmz"

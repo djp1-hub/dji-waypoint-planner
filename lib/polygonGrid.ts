@@ -88,6 +88,7 @@ function segmentHorizontalIntersection(a: Point, b: Point, y: number): number | 
   const minY = Math.min(a.y, b.y);
   const maxY = Math.max(a.y, b.y);
 
+  // y >= maxY исключаем специально, чтобы не считать вершину дважды.
   if (y < minY || y >= maxY) {
     return null;
   }
@@ -95,6 +96,111 @@ function segmentHorizontalIntersection(a: Point, b: Point, y: number): number | 
   const t = (y - a.y) / (b.y - a.y);
 
   return a.x + t * (b.x - a.x);
+}
+
+function distance(a: Point, b: Point): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function pointsAlongSegment(a: Point, b: Point, spacingM: number): Point[] {
+  const segmentLength = distance(a, b);
+
+  if (segmentLength < 0.5) {
+    return [];
+  }
+
+  if (!Number.isFinite(spacingM) || spacingM <= 0) {
+    return [a, b];
+  }
+
+  const segmentCount = Math.max(1, Math.ceil(segmentLength / spacingM));
+  const points: Point[] = [];
+
+  for (let i = 0; i <= segmentCount; i++) {
+    const t = i / segmentCount;
+
+    points.push({
+      x: a.x + (b.x - a.x) * t,
+      y: a.y + (b.y - a.y) * t,
+    });
+  }
+
+  return points;
+}
+
+function deduplicateSequentialPoints(points: Point[], minDistanceM = 0.5): Point[] {
+  const result: Point[] = [];
+
+  for (const point of points) {
+    const prev = result[result.length - 1];
+
+    if (!prev || distance(prev, point) >= minDistanceM) {
+      result.push(point);
+    }
+  }
+
+  return result;
+}
+
+function buildRows(
+  rotatedPolygon: Point[],
+  rowSpacing: number,
+  photoSpacing: number,
+): Point[][] {
+  const box = bbox(rotatedPolygon);
+  const rows: Point[][] = [];
+
+  // Небольшой отступ внутрь, чтобы первая линия не лежала прямо на границе полигона.
+  const startY = box.minY + rowSpacing / 2;
+
+  for (let y = startY; y <= box.maxY; y += rowSpacing) {
+    const intersections: number[] = [];
+
+    for (let i = 0; i < rotatedPolygon.length; i++) {
+      const a = rotatedPolygon[i];
+      const b = rotatedPolygon[(i + 1) % rotatedPolygon.length];
+
+      const x = segmentHorizontalIntersection(a, b, y);
+
+      if (x !== null && Number.isFinite(x)) {
+        intersections.push(x);
+      }
+    }
+
+    intersections.sort((a, b) => a - b);
+
+    const rowPoints: Point[] = [];
+
+    // Каждая пара пересечений даёт один внутренний отрезок.
+    // Для выпуклого полигона будет одна пара.
+    // Для вогнутого — может быть несколько пар.
+    for (let i = 0; i + 1 < intersections.length; i += 2) {
+      const x1 = intersections[i];
+      const x2 = intersections[i + 1];
+
+      if (Math.abs(x2 - x1) < 0.5) {
+        continue;
+      }
+
+      const start: Point = { x: x1, y };
+      const end: Point = { x: x2, y };
+
+      const segmentPoints = pointsAlongSegment(start, end, photoSpacing);
+
+      rowPoints.push(...segmentPoints);
+    }
+
+    const cleanRow = deduplicateSequentialPoints(rowPoints);
+
+    if (cleanRow.length >= 2) {
+      rows.push(cleanRow);
+    }
+  }
+
+  return rows;
 }
 
 export function generatePolygonGridWaypoints(
@@ -113,74 +219,41 @@ export function generatePolygonGridWaypoints(
     throw new Error('Overlap must be between 0 and 95');
   }
 
+  if (params.speed <= 0) {
+    throw new Error('Speed must be greater than zero');
+  }
+
   const origin = polygonCentroid(polygon);
   const angleRad = (params.direction * Math.PI) / 180;
 
   const localPolygon = polygon.map((p) => latLngToMeters(p, origin));
 
-  // Поворачиваем полигон так, чтобы проходы стали горизонтальными линиями.
+  // Поворачиваем полигон так, чтобы линии облёта стали горизонтальными.
   const rotatedPolygon = localPolygon.map((p) => rotatePoint(p, -angleRad));
-  const box = bbox(rotatedPolygon);
 
   // Упрощённая модель покрытия камеры.
-  // При 60 м и overlap 70% шаг получится около 25 м.
+  // Для Mini 4 Pro это приближение, но для планировщика даёт предсказуемую сетку.
+  //
+  // height = 60 м, overlap = 70:
+  // footprint = 60 * 1.4 = 84 м
+  // spacing = 84 * 0.3 = 25.2 м
   const footprintAcrossM = params.height * 1.4;
   const footprintAlongM = params.height * 1.4;
 
   const rowSpacing = footprintAcrossM * (1 - params.overlap / 100);
   const photoSpacing = footprintAlongM * (1 - params.overlap / 100);
 
-  const rows: Point[][] = [];
-
-  for (let y = box.minY; y <= box.maxY; y += rowSpacing) {
-    const intersections: number[] = [];
-
-    for (let i = 0; i < rotatedPolygon.length; i++) {
-      const a = rotatedPolygon[i];
-      const b = rotatedPolygon[(i + 1) % rotatedPolygon.length];
-
-      const x = segmentHorizontalIntersection(a, b, y);
-
-      if (x !== null && Number.isFinite(x)) {
-        intersections.push(x);
-      }
-    }
-
-    intersections.sort((a, b) => a - b);
-
-    const rowSegments: Point[][] = [];
-
-    for (let i = 0; i + 1 < intersections.length; i += 2) {
-      const x1 = intersections[i];
-      const x2 = intersections[i + 1];
-
-      if (Math.abs(x2 - x1) < 0.5) {
-        continue;
-      }
-
-      const start: Point = { x: x1, y };
-      const end: Point = { x: x2, y };
-
-      const points = pointsAlongSegment(start, end, photoSpacing);
-
-      if (points.length > 0) {
-        rowSegments.push(points);
-      }
-    }
-
-    if (rowSegments.length === 0) {
-      continue;
-    }
-
-    // Для обычного полигона это будет один сегмент на строку.
-    // Для вогнутого полигона может быть несколько сегментов.
-    const rowPoints = rowSegments.flat();
-
-    rows.push(rowPoints);
-  }
+  const rows = buildRows(rotatedPolygon, rowSpacing, photoSpacing);
 
   const route: Point[] = [];
 
+  // Главная логика порядка:
+  // 1-я строка: слева направо
+  // 2-я строка: справа налево
+  // 3-я строка: слева направо
+  // и так далее.
+  //
+  // Это устраняет диагональную "паутину" между строками.
   rows.forEach((rowPoints, rowIndex) => {
     if (rowIndex % 2 === 0) {
       route.push(...rowPoints);
@@ -189,7 +262,9 @@ export function generatePolygonGridWaypoints(
     }
   });
 
-  return route.map((p, index) => {
+  const cleanRoute = deduplicateSequentialPoints(route);
+
+  return cleanRoute.map((p, index) => {
     const unrotated = rotatePoint(p, angleRad);
     const latLng = metersToLatLng(unrotated, origin);
 

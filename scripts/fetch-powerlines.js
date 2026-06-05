@@ -23,6 +23,8 @@
 const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
+const { getCountry } = require('./countries');
+const COUNTRY = getCountry();
 
 const CZ_QUADRANTS = [
   { bbox: '49.8,12.09,51.06,15.475', label: 'NW' },
@@ -364,15 +366,15 @@ out body geom;`;
   const substationElements  = [];
   const seen                = new Set();
 
-  console.log('Fetching Czech power lines and substations in 4 quadrants...\n');
+  console.log('Fetching selected-country power lines and substations in 4 quadrants...\n');
 
-  for (let i = 0; i < CZ_QUADRANTS.length; i++) {
+  for (let i = 0; i < COUNTRY.quadrants.length; i++) {
     if (i > 0) {
       console.log('\nWaiting 15 s before next quadrant (Overpass rate limit)...');
       await new Promise((r) => setTimeout(r, 15000));
     }
-    console.log(`Quadrant ${CZ_QUADRANTS[i].label}:`);
-    await fetchQuadrant(CZ_QUADRANTS[i].bbox, seen, lineWays, substationElements, CZ_QUADRANTS[i].label);
+    console.log(`Quadrant ${COUNTRY.quadrants[i].label}:`);
+    await fetchQuadrant(COUNTRY.quadrants[i].bbox, seen, lineWays, substationElements, COUNTRY.quadrants[i].label);
   }
 
   console.log(`\nTotal raw: ${lineWays.length} line ways, ${substationElements.length} substation elements`);
@@ -409,7 +411,7 @@ out body geom;`;
 
   const collection = { type: 'FeatureCollection', features };
   const outDir  = path.join(__dirname, '..', 'public', 'data');
-  const outFile = path.join(outDir, 'powerlines-cz.json');
+  const outFile = path.join(outDir, `powerlines-${COUNTRY.code}.json`);
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(outFile, JSON.stringify(collection), 'utf-8');
 

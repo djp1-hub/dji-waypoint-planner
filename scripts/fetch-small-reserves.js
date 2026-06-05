@@ -16,6 +16,8 @@
 const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
+const { getCountry } = require('./countries');
+const COUNTRY = getCountry();
 
 // CZ split into 4 quadrants to reduce query load
 const CZ_BBOXES = [
@@ -205,16 +207,17 @@ out body geom;`;
   const seen = new Set();
   const labels = ['NW', 'NE', 'SW', 'SE'];
 
-  console.log('Fetching Czech small nature reserves (NPR/NPP/PR/PP) in 4 quadrants...');
-  console.log('Each quadrant covers 1/4 of CZ to avoid Overpass timeout.\n');
+  console.log('Fetching selected-country small nature reserves (NPR/NPP/PR/PP) in 4 quadrants...');
+  console.log('Each quadrant covers 1/4 of selected country to avoid Overpass timeout.\n');
 
-  for (let i = 0; i < CZ_BBOXES.length; i++) {
+  for (let i = 0; i < COUNTRY.quadrants.length; i++) {
     if (i > 0) {
       console.log('\nWaiting 20 s before next quadrant (Overpass rate limit)...');
       await new Promise((r) => setTimeout(r, 20000));
     }
     console.log(`\nQuadrant ${labels[i]}:`);
-    await fetchBbox(CZ_BBOXES[i], seen, features, labels[i]);
+    const { bbox, label } = COUNTRY.quadrants[i];
+    await fetchBbox(bbox, seen, features, label);
   }
 
   // ── Summary ─────────────────────────────────────────────────────────────────
@@ -231,7 +234,7 @@ out body geom;`;
   // ── Save ─────────────────────────────────────────────────────────────────────
   const collection = { type: 'FeatureCollection', features };
   const outDir     = path.join(__dirname, '..', 'public', 'data');
-  const outFile    = path.join(outDir, 'small-reserves-cz.json');
+  const outFile    = path.join(outDir, `small-reserves-${COUNTRY.code}.json`);
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(outFile, JSON.stringify(collection), 'utf-8');
 

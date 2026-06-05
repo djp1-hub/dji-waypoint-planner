@@ -27,6 +27,8 @@
 const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
+const { getCountry } = require('./countries');
+const COUNTRY = getCountry();
 
 const CZ_HALVES = [
   { bbox: '49.8,12.09,51.06,18.86', label: 'North' },
@@ -282,14 +284,14 @@ out body geom;`;
   const seenRels    = new Set();
   const waysByClass = {};
 
-  console.log('Fetching Czech roads in 2 halves...\n');
+  console.log('Fetching selected-country roads in 2 halves...\n');
 
-  for (let i = 0; i < CZ_HALVES.length; i++) {
+  for (let i = 0; i < COUNTRY.halves.length; i++) {
     if (i > 0) {
       console.log('\nWaiting 20 s before next half (Overpass rate limit)...');
       await new Promise((r) => setTimeout(r, 20000));
     }
-    const { bbox, label } = CZ_HALVES[i];
+    const { bbox, label } = COUNTRY.halves[i];
     console.log(`Half ${label}:`);
     await fetchHighwayWays(bbox, seenWays, waysByClass, label);
 
@@ -339,7 +341,7 @@ out body geom;`;
 
   const collection = { type: 'FeatureCollection', features };
   const outDir  = path.join(__dirname, '..', 'public', 'data');
-  const outFile = path.join(outDir, 'roads-cz.json');
+  const outFile = path.join(outDir, `roads-${COUNTRY.code}.json`);
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(outFile, JSON.stringify(collection), 'utf-8');
 

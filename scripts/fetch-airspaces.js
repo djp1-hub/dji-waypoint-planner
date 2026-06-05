@@ -10,6 +10,8 @@
 
 const fs   = require('fs');
 const path = require('path');
+const { getCountry } = require('./countries');
+const COUNTRY = getCountry();
 const https = require('https');
 
 // ── Read API key from .env.local ──────────────────────────────────────────────
@@ -34,9 +36,9 @@ if (!apiKey) {
 // OpenAIP moved from api.openaip.net to api.core.openaip.net
 // API key sent only via header — never in the URL (prevents exposure in proxy logs)
 const typeParams = [1, 2, 3, 4, 8].map((t) => `type[]=${t}`).join('&');
-const url = `https://api.core.openaip.net/api/airspaces?page=1&limit=1000&country=CZ&${typeParams}`;
+const url = `https://api.core.openaip.net/api/airspaces?page=1&limit=1000&country=${COUNTRY.openAipCode}&${typeParams}`;
 
-console.log('Fetching CZ airspace data from OpenAIP REST API...');
+console.log(`Fetching ${COUNTRY.label} airspace data from OpenAIP REST API...`);
 
 // ── Fetch data ────────────────────────────────────────────────────────────────
 const req = https.get(url, { headers: { 'x-openaip-api-key': apiKey, 'Accept': 'application/json' } }, (res) => {
@@ -65,11 +67,11 @@ const req = https.get(url, { headers: { 'x-openaip-api-key': apiKey, 'Accept': '
 
     // ── Save to public/data/ ────────────────────────────────────────────────
     const outDir  = path.join(__dirname, '..', 'public', 'data');
-    const outFile = path.join(outDir, 'airspaces-cz.json');
+    const outFile = path.join(outDir, `airspaces-${COUNTRY.code}.json`);
     fs.mkdirSync(outDir, { recursive: true });
     fs.writeFileSync(outFile, JSON.stringify(parsed, null, 2), 'utf-8');
     console.log(`Saved to: ${outFile}`);
-    console.log('Done. Commit public/data/airspaces-cz.json to include it in the build.');
+    console.log(`Done. Commit public/data/airspaces-${COUNTRY.code}.json to include it in the build.`);
   });
 });
 

@@ -22,6 +22,8 @@
 const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
+const { getCountry } = require('./countries');
+const COUNTRY = getCountry();
 
 const CZ_HALVES = [
   { bbox: '49.8,12.09,51.06,18.86', label: 'North' },
@@ -211,15 +213,15 @@ out body geom;`;
   const features = [];
   const seen     = new Set();
 
-  console.log('Fetching Czech railway route relations in 2 halves...\n');
+  console.log('Fetching selected-country railway route relations in 2 halves...\n');
 
-  for (let i = 0; i < CZ_HALVES.length; i++) {
+  for (let i = 0; i < COUNTRY.halves.length; i++) {
     if (i > 0) {
       console.log('\nWaiting 20 s before next half (Overpass rate limit)...');
       await new Promise((r) => setTimeout(r, 20000));
     }
-    console.log(`Half ${CZ_HALVES[i].label}:`);
-    await fetchHalf(CZ_HALVES[i].bbox, seen, features, CZ_HALVES[i].label);
+    console.log(`Half ${COUNTRY.halves[i].label}:`);
+    await fetchHalf(COUNTRY.halves[i].bbox, seen, features, COUNTRY.halves[i].label);
   }
 
   const main = features.filter((f) => f.properties.tier === 'main').length;
@@ -233,7 +235,7 @@ out body geom;`;
 
   const collection = { type: 'FeatureCollection', features };
   const outDir  = path.join(__dirname, '..', 'public', 'data');
-  const outFile = path.join(outDir, 'railways-cz.json');
+  const outFile = path.join(outDir, `railways-${COUNTRY.code}.json`);
   fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(outFile, JSON.stringify(collection), 'utf-8');
 

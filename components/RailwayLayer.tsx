@@ -10,16 +10,18 @@
 // Must be a child of MapContainer (useMapLayer calls useMap internally).
 
 import { railwayColor, railwayWeight } from '@/lib/railway';
+import { DataRegion, dataFileUrl } from '@/lib/dataRegion';
 import { useMapLayer } from '@/hooks/useMapLayer';
 
 interface RailwayLayerProps {
   active: boolean;
+  dataRegion: DataRegion;
 }
 
-export default function RailwayLayer({ active }: RailwayLayerProps) {
+export default function RailwayLayer({ active, dataRegion }: RailwayLayerProps) {
   useMapLayer({
     active,
-    fetchUrl: '/data/railways-cz.json',
+    fetchUrl: dataFileUrl('railways', dataRegion),
 
     // Data is already a valid GeoJSON FeatureCollection — pass through directly
     parseData: (rawData) => rawData as GeoJSON.FeatureCollection,

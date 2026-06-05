@@ -6,16 +6,18 @@
 // Must be a child of MapContainer (useMapLayer calls useMap internally).
 
 import { waterSourceColor, waterSourceFillOpacity } from '@/lib/waterSources';
+import { DataRegion, dataFileUrl } from '@/lib/dataRegion';
 import { useMapLayer } from '@/hooks/useMapLayer';
 
 interface WaterSourcesLayerProps {
   active: boolean;
+  dataRegion: DataRegion;
 }
 
-export default function WaterSourcesLayer({ active }: WaterSourcesLayerProps) {
+export default function WaterSourcesLayer({ active, dataRegion }: WaterSourcesLayerProps) {
   useMapLayer({
     active,
-    fetchUrl: '/data/water-sources-cz.json',
+    fetchUrl: dataFileUrl('water-sources', dataRegion),
 
     // Data is already a valid GeoJSON FeatureCollection — pass through directly
     parseData: (rawData) => rawData as GeoJSON.FeatureCollection,

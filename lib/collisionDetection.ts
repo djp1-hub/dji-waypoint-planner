@@ -11,6 +11,7 @@
 
 import { Waypoint } from '@/lib/types';
 import { AIRSPACE_TYPE_NAMES } from './airspaceTypes';
+import { DataRegion, DEFAULT_DATA_REGION, dataFileUrl } from './dataRegion';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -92,10 +93,10 @@ interface LineZone {
 
 // ── Module-level cache ─────────────────────────────────────────────────────
 
-let zonesCache:          Zone[]                      | null = null;
-let lineZonesCache:      LineZone[]                  | null = null;
-/** Raw powerlines GeoJSON — fetched once, shared by loadZones() and loadLineZones() */
-let powerlinesCache:     GeoJSON.FeatureCollection   | null = null;
+const zonesCacheByRegion = new Map<DataRegion, Zone[]>();
+const lineZonesCacheByRegion = new Map<DataRegion, LineZone[]>();
+/** Raw powerlines GeoJSON — cached per region and shared by loadZones() and loadLineZones() */
+const powerlinesCacheByRegion = new Map<DataRegion, GeoJSON.FeatureCollection | null>();
 
 // ── Severity + instructions mapping ───────────────────────────────────────
 
@@ -132,13 +133,20 @@ function airspaceInstructions(typeNum: number): string {
 }
 
 function protectedAreaSeverity(type: string): Severity {
-  if (type === 'NP') return 'DANGER';
+  if (type === 'NP' || type === 'NATIONAL_PARK') return 'DANGER';
+  if (type === 'PROTECTED_AREA') return 'CAUTION';
   return 'CAUTION'; // CHKO and other protected area types
 }
 
 function protectedAreaInstructions(type: string): string {
   if (type === 'NP') {
     return 'Národní park – zákaz létání mimo zastavěné oblasti. Kontaktujte správu NP.';
+  }
+  if (type === 'NATIONAL_PARK') {
+    return 'National park – verify Serbian local drone rules and official restrictions before flight.';
+  }
+  if (type === 'PROTECTED_AREA') {
+    return 'Protected area – verify local drone restrictions before flight.';
   }
   return 'CHKO – ověřte zónu I–IV a podmínky na letejtezodpovedne.cz';
 }
@@ -283,26 +291,36 @@ function pointToSegmentDistSq(
 
 // ── GeoJSON loading ────────────────────────────────────────────────────────
 
-/** Fetches powerlines-cz.json once; subsequent calls return the cached result. */
-async function loadPowerlinesData(): Promise<GeoJSON.FeatureCollection | null> {
-  if (powerlinesCache !== null) return powerlinesCache;
-  try {
-    const res = await fetch('/data/powerlines-cz.json');
-    if (res.ok) powerlinesCache = await res.json() as GeoJSON.FeatureCollection;
-  } catch {
-    console.warn('[collisionDetection] Failed to load powerlines data');
+/** Fetches powerlines JSON once per region; subsequent calls return the cached result. */
+async function loadPowerlinesData(dataRegion: DataRegion): Promise<GeoJSON.FeatureCollection | null> {
+  if (powerlinesCacheByRegion.has(dataRegion)) {
+    return powerlinesCacheByRegion.get(dataRegion) ?? null;
   }
-  return powerlinesCache;
+
+  let result: GeoJSON.FeatureCollection | null = null;
+
+  try {
+    const res = await fetch(dataFileUrl('powerlines', dataRegion));
+    if (res.ok) {
+      result = await res.json() as GeoJSON.FeatureCollection;
+    }
+  } catch {
+    console.warn(`[collisionDetection] Failed to load powerlines data for ${dataRegion}`);
+  }
+
+  powerlinesCacheByRegion.set(dataRegion, result);
+  return result;
 }
 
-async function loadZones(): Promise<Zone[]> {
-  if (zonesCache !== null) return zonesCache;
+async function loadZones(dataRegion: DataRegion): Promise<Zone[]> {
+  const cached = zonesCacheByRegion.get(dataRegion);
+  if (cached) return cached;
 
   const zones: Zone[] = [];
 
   // Load airspaces
   try {
-    const res = await fetch('/data/airspaces-cz.json');
+    const res = await fetch(dataFileUrl('airspaces', dataRegion));
     if (res.ok) {
       const data = await res.json() as { items: { name: string; type: number; geometry: { type: string; coordinates: [number, number][][] } }[] };
       for (const item of data.items) {
@@ -324,7 +342,7 @@ async function loadZones(): Promise<Zone[]> {
 
   // Load protected areas (NP/CHKO)
   try {
-    const res = await fetch('/data/protected-areas-cz.json');
+    const res = await fetch(dataFileUrl('protected-areas', dataRegion));
     if (res.ok) {
       const data = await res.json() as GeoJSON.FeatureCollection;
       for (const feature of data.features) {
@@ -338,7 +356,7 @@ async function loadZones(): Promise<Zone[]> {
           name: props.name ?? 'Chráněné území',
           type: areaType,
           severity: protectedAreaSeverity(areaType),
-          instructions: protectedAreaInstructions(areaType),
+          instructions: (props.restriction as string) ?? protectedAreaInstructions(areaType),
           ring,
         });
       }
@@ -349,7 +367,7 @@ async function loadZones(): Promise<Zone[]> {
 
   // Load small nature reserves (NPR/NPP/PR/PP)
   try {
-    const res = await fetch('/data/small-reserves-cz.json');
+    const res = await fetch(dataFileUrl('small-reserves', dataRegion));
     if (res.ok) {
       const data = await res.json() as GeoJSON.FeatureCollection;
       for (const feature of data.features) {
@@ -374,7 +392,7 @@ async function loadZones(): Promise<Zone[]> {
 
   // Load water sources (reservoirs and drinking water protection zones)
   try {
-    const res = await fetch('/data/water-sources-cz.json');
+    const res = await fetch(dataFileUrl('water-sources', dataRegion));
     if (res.ok) {
       const data = await res.json() as GeoJSON.FeatureCollection;
       for (const feature of data.features) {
@@ -399,7 +417,7 @@ async function loadZones(): Promise<Zone[]> {
 
   // Load power substation polygons (featureType='substation' in powerlines GeoJSON)
   // Uses shared cache — powerlines-cz.json is fetched only once per session.
-  const powerlinesData = await loadPowerlinesData();
+  const powerlinesData = await loadPowerlinesData(dataRegion);
   if (powerlinesData) {
     for (const feature of powerlinesData.features) {
       if (feature.geometry.type !== 'Polygon') continue;
@@ -419,7 +437,7 @@ async function loadZones(): Promise<Zone[]> {
     }
   }
 
-  zonesCache = zones;
+  zonesCacheByRegion.set(dataRegion, zones);
   return zones;
 }
 
@@ -427,13 +445,14 @@ async function loadZones(): Promise<Zone[]> {
  * Loads railway LineString features into LineZone records.
  * Cached separately from polygon zones because railways use distance-based checks.
  */
-async function loadLineZones(): Promise<LineZone[]> {
-  if (lineZonesCache !== null) return lineZonesCache;
+async function loadLineZones(dataRegion: DataRegion): Promise<LineZone[]> {
+  const cached = lineZonesCacheByRegion.get(dataRegion);
+  if (cached) return cached;
 
   const zones: LineZone[] = [];
 
   try {
-    const res = await fetch('/data/railways-cz.json');
+    const res = await fetch(dataFileUrl('railways', dataRegion));
     if (res.ok) {
       const data = await res.json() as GeoJSON.FeatureCollection;
       for (const feature of data.features) {
@@ -462,7 +481,7 @@ async function loadLineZones(): Promise<LineZone[]> {
 
   // Load road LineString features (motorway/expressway/primary/secondary)
   try {
-    const res = await fetch('/data/roads-cz.json');
+    const res = await fetch(dataFileUrl('roads', dataRegion));
     if (res.ok) {
       const data = await res.json() as GeoJSON.FeatureCollection;
       for (const feature of data.features) {
@@ -490,7 +509,7 @@ async function loadLineZones(): Promise<LineZone[]> {
 
   // Load power line LineString features (featureType='line' in powerlines GeoJSON)
   // Uses shared cache — powerlines-cz.json is fetched only once per session.
-  const powerlinesData = await loadPowerlinesData();
+  const powerlinesData = await loadPowerlinesData(dataRegion);
   if (powerlinesData) {
     for (const feature of powerlinesData.features) {
       if (feature.geometry.type !== 'LineString') continue;
@@ -512,7 +531,7 @@ async function loadLineZones(): Promise<LineZone[]> {
     }
   }
 
-  lineZonesCache = zones;
+  lineZonesCacheByRegion.set(dataRegion, zones);
   return zones;
 }
 
@@ -527,8 +546,9 @@ async function loadLineZones(): Promise<LineZone[]> {
  */
 export async function checkWaypointCollisions(
   waypoints: Waypoint[],
+  dataRegion: DataRegion = DEFAULT_DATA_REGION,
 ): Promise<Collision[]> {
-  const [zones, lineZones] = await Promise.all([loadZones(), loadLineZones()]);
+  const [zones, lineZones] = await Promise.all([loadZones(dataRegion), loadLineZones(dataRegion)]);
   const collisions: Collision[] = [];
 
   for (let i = 0; i < waypoints.length; i++) {

@@ -15,16 +15,18 @@
 // Must be a child of MapContainer (useMapLayer calls useMap internally).
 
 import { powerlineColor, powerlineWeight, substationFillColor } from '@/lib/powerline';
+import { DataRegion, dataFileUrl } from '@/lib/dataRegion';
 import { useMapLayer } from '@/hooks/useMapLayer';
 
 interface PowerlineLayerProps {
   active: boolean;
+  dataRegion: DataRegion;
 }
 
-export default function PowerlineLayer({ active }: PowerlineLayerProps) {
+export default function PowerlineLayer({ active, dataRegion }: PowerlineLayerProps) {
   useMapLayer({
     active,
-    fetchUrl: '/data/powerlines-cz.json',
+    fetchUrl: dataFileUrl('powerlines', dataRegion),
 
     // Data is already a valid GeoJSON FeatureCollection — pass through directly
     parseData: (rawData) => rawData as GeoJSON.FeatureCollection,

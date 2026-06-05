@@ -26,6 +26,7 @@ import { useTranslation } from '@/lib/languageContext';
 import { FilmType } from '@/app/page';
 import { estimateBattery } from '@/lib/batteryEstimate';
 import { Collision, highestSeverity, groupCollisionsByZone } from '@/lib/collisionDetection';
+import { DataRegion } from '@/lib/dataRegion';
 import { severityClasses } from '@/lib/severityColor';
 import CollisionPanel from './CollisionPanel';
 
@@ -165,6 +166,9 @@ interface SidebarProps {
   onFlyTo: (lat: number, lng: number) => void;
   // Active drone — used for battery estimate (undefined = fall back to Mini 4 Pro defaults)
   activeDrone?: Drone;
+  // Static dataset region for airspaces/protected areas/infrastructure layers
+  dataRegion: DataRegion;
+  onDataRegionChange: (region: DataRegion) => void;
 }
 
 /** Reusable tab strip — renders a row of toggle buttons with a shared active color. */
@@ -286,6 +290,8 @@ export default function Sidebar({
   isExporting,
   onFlyTo,
   activeDrone,
+  dataRegion,
+  onDataRegionChange,
 }: SidebarProps) {
   const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -327,6 +333,17 @@ export default function Sidebar({
         <div className="flex items-center justify-between">
           <p className="text-gray-500 text-xs">Mini 4 Pro</p>
           <LanguageSwitcher />
+        </div>
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <span className="text-gray-500 text-xs">{t('region.coverage')}</span>
+          <select
+            value={dataRegion}
+            onChange={(e) => onDataRegionChange(e.target.value as DataRegion)}
+            className="bg-[#0f1117] border border-gray-600 text-gray-300 text-xs rounded px-2 py-1 outline-none"
+          >
+            <option value="cz">{t('region.cz')}</option>
+            <option value="rs">{t('region.rs')}</option>
+          </select>
         </div>
         <ActiveProfileBadge />
       </div>

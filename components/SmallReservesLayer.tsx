@@ -6,16 +6,18 @@
 // Must be a child of MapContainer (useMapLayer calls useMap internally).
 
 import { smallReserveColor, smallReserveFillOpacity } from '@/lib/smallReserves';
+import { DataRegion, dataFileUrl } from '@/lib/dataRegion';
 import { useMapLayer } from '@/hooks/useMapLayer';
 
 interface SmallReservesLayerProps {
   active: boolean;
+  dataRegion: DataRegion;
 }
 
-export default function SmallReservesLayer({ active }: SmallReservesLayerProps) {
+export default function SmallReservesLayer({ active, dataRegion }: SmallReservesLayerProps) {
   useMapLayer({
     active,
-    fetchUrl: '/data/small-reserves-cz.json',
+    fetchUrl: dataFileUrl('small-reserves', dataRegion),
 
     // Data is already a valid GeoJSON FeatureCollection — pass through directly
     parseData: (rawData) => rawData as GeoJSON.FeatureCollection,

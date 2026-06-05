@@ -12,16 +12,18 @@
 // Must be a child of MapContainer (useMapLayer calls useMap internally).
 
 import { roadColor, roadWeight } from '@/lib/road';
+import { DataRegion, dataFileUrl } from '@/lib/dataRegion';
 import { useMapLayer } from '@/hooks/useMapLayer';
 
 interface RoadLayerProps {
   active: boolean;
+  dataRegion: DataRegion;
 }
 
-export default function RoadLayer({ active }: RoadLayerProps) {
+export default function RoadLayer({ active, dataRegion }: RoadLayerProps) {
   useMapLayer({
     active,
-    fetchUrl: '/data/roads-cz.json',
+    fetchUrl: dataFileUrl('roads', dataRegion),
 
     // Data is already a valid GeoJSON FeatureCollection — pass through directly
     parseData: (rawData) => rawData as GeoJSON.FeatureCollection,

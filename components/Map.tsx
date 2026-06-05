@@ -15,6 +15,7 @@ import WaterSourcesLayer from './WaterSourcesLayer';
 import RailwayLayer from './RailwayLayer';
 import RoadLayer from './RoadLayer';
 import PowerlineLayer from './PowerlineLayer';
+import { DataRegion } from '@/lib/dataRegion';
 
 // Fix Leaflet's default icon URLs broken by webpack
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
@@ -170,38 +171,25 @@ function LayersControl() {
 
 interface MapProps {
   waypoints: Waypoint[];
-  /** Whether waypoint markers can be dragged (only in waypoints mode) */
   draggableMarkers: boolean;
-  /** Cursor style hint — 'crosshair' when selecting a point on the map */
   crosshairCursor?: boolean;
-  /** Called on every map click */
   onMapClick: (lat: number, lng: number) => void;
-  /** Called after drag ends on a marker */
   onUpdateWaypoint: (id: string, lat: number, lng: number) => void;
-  /** Called when the map viewport moves — provides the new center */
   onCenterChange: (lat: number, lng: number) => void;
-  /** Optional rectangle to draw (grid area selection) — [[swLat,swLng],[neLat,neLng]] */
   gridRect: [[number, number], [number, number]] | null;
-  /** Optional facade line — [[aLat,aLng],[bLat,bLng]] */
   facadeLine: [[number, number], [number, number]] | null;
-  /** Optional building polygon for 360° facade mode — 4 corners [[lat,lng],...] */
   buildingPolygon: [[number, number], [number, number], [number, number], [number, number]] | null;
-  /** When set, the map smoothly flies to these coordinates at the given zoom level */
   flyToTarget: { lat: number; lng: number; zoom: number } | null;
-  /** Whether to show CTR/TRA airspace zones on the map */
+
   showAirspace: boolean;
-  /** Whether to show NP/CHKO protected areas on the map */
   showProtectedAreas: boolean;
-  /** Whether to show NPR/NPP/PR/PP small nature reserves on the map */
   showSmallReserves: boolean;
-  /** Whether to show water reservoirs and protection zones on the map */
   showWaterSources: boolean;
-  /** Whether to show railway buffer zones on the map */
   showRailways: boolean;
-  /** Whether to show road and highway protection zones on the map */
   showRoads: boolean;
-  /** Whether to show power line and substation protection zones on the map */
   showPowerlines: boolean;
+
+  dataRegion: DataRegion;
 }
 
 export default function MapView({
@@ -222,6 +210,7 @@ export default function MapView({
   showRailways,
   showRoads,
   showPowerlines,
+  dataRegion,
 }: MapProps) {
   const markersRef = useRef<Record<string, L.Marker>>({});
   const mapRef = useRef<L.Map | null>(null);
@@ -309,25 +298,28 @@ export default function MapView({
       <MapEventHandler onMapClick={onMapClick} onCenterChange={onCenterChange} />
 
       {/* Airspace overlay — renders only when showAirspace is true */}
-      <AirspaceLayer active={showAirspace} />
+      <AirspaceLayer active={showAirspace} dataRegion={dataRegion} />
 
       {/* Protected areas overlay — NP (green) and CHKO (blue) */}
-      <ProtectedAreasLayer active={showProtectedAreas} />
+      <ProtectedAreasLayer
+        active={showProtectedAreas}
+        dataRegion={dataRegion}
+      />
 
       {/* Small nature reserves overlay — NPR/NPP (dark green), PR/PP (light green) */}
-      <SmallReservesLayer active={showSmallReserves} />
+      <SmallReservesLayer active={showSmallReserves} dataRegion={dataRegion} />
 
       {/* Water sources overlay — drinking (dark blue), general reservoir (light blue) */}
-      <WaterSourcesLayer active={showWaterSources} />
+      <WaterSourcesLayer active={showWaterSources} dataRegion={dataRegion} />
 
       {/* Railway buffer overlay — main rail (red 60 m), tram (orange 30 m) */}
-      <RailwayLayer active={showRailways} />
+      <RailwayLayer active={showRailways} dataRegion={dataRegion} />
 
       {/* Road overlay — motorway/primary amber 50 m, secondary light amber 15 m */}
-      <RoadLayer active={showRoads} />
+      <RoadLayer active={showRoads} dataRegion={dataRegion} />
 
       {/* Power line overlay — voltage-based colors, substations as yellow polygons */}
-      <PowerlineLayer active={showPowerlines} />
+      <PowerlineLayer active={showPowerlines} dataRegion={dataRegion} />
 
       {/* Waypoint connection line */}
       {polylinePositions.length > 1 && (

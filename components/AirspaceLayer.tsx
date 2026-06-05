@@ -6,18 +6,20 @@
 // Must be a child of MapContainer (useMapLayer calls useMap internally).
 
 import { airspaceColor, parseAirspaceItems } from '@/lib/airspace';
+import { DataRegion, dataFileUrl } from '@/lib/dataRegion';
 import { useMapLayer } from '@/hooks/useMapLayer';
 import type { GeoJSON } from 'leaflet';
 
 interface AirspaceLayerProps {
   /** Whether to show airspace zones on the map */
   active: boolean;
+  dataRegion: DataRegion;
 }
 
-export default function AirspaceLayer({ active }: AirspaceLayerProps) {
+export default function AirspaceLayer({ active, dataRegion }: AirspaceLayerProps) {
   useMapLayer({
     active,
-    fetchUrl: '/data/airspaces-cz.json',
+    fetchUrl: dataFileUrl('airspaces', dataRegion),
 
     // Convert { items: unknown[] } → GeoJSON FeatureCollection with color pre-computed
     parseData: (rawData) => {

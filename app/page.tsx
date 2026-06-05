@@ -14,6 +14,7 @@ import { importKmz } from '@/lib/importKmz';
 import { checkWaypointCollisions, Collision } from '@/lib/collisionDetection';
 import { loadActiveDrone } from '@/lib/profileStore';
 import { generateId } from '@/lib/panelUtils';
+import { DEFAULT_DATA_REGION, DataRegion } from '@/lib/dataRegion';
 
 // Leaflet map must be loaded client-side only (it uses browser APIs)
 const MapView = dynamic(() => import('@/components/Map'), { ssr: false });
@@ -48,6 +49,9 @@ export default function HomePage() {
   // originalWaypoints stores heights before terrain adjustment so they can be restored
   const [originalWaypoints, setOriginalWaypoints] = useState<Waypoint[] | null>(null);
   const [terrainActive, setTerrainActive] = useState(false);
+
+  // ── Data region state ───────────────────────────────────────
+  const [dataRegion, setDataRegion] = useState<DataRegion>(DEFAULT_DATA_REGION);
 
   // ── Airspace zones state ─────────────────────────────────────
   const [showAirspace, setShowAirspace] = useState(false);
@@ -107,10 +111,10 @@ export default function HomePage() {
       setCollisions([]);
       return;
     }
-    checkWaypointCollisions(waypoints)
+    checkWaypointCollisions(waypoints, dataRegion)
       .then(setCollisions)
       .catch((err) => console.warn('[collisionDetection] Check failed:', err));
-  }, [waypoints]);
+  }, [waypoints, dataRegion]);
 
   // ── App mode: photo workflow vs. cinematic film shots ─────────
   const [appMode, setAppMode] = useState<'photo' | 'film'>('photo');
@@ -702,6 +706,8 @@ export default function HomePage() {
         onExportLitchi={handleExportLitchi}
         isExporting={isExporting}
         activeDrone={activeDrone}
+        dataRegion={dataRegion}
+        onDataRegionChange={setDataRegion}
       />
 
       {/* Toast notification — appears bottom-right, auto-dismisses after 3 s */}
@@ -730,6 +736,7 @@ export default function HomePage() {
           showRailways={showRailways}
           showRoads={showRoads}
           showPowerlines={showPowerlines}
+          dataRegion={dataRegion}
         />
       </main>
     </div>

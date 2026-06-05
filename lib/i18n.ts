@@ -78,6 +78,11 @@ const translations: Record<Language, Translations> = {
     'map.powerlines.show': '⚡ El. vedení (ochran. pásma)',
     'map.powerlines.hide': '⚡ Skrýt el. vedení',
 
+    // Data region
+    'region.coverage': 'Pokrytí dat',
+    'region.cz': 'Česká republika',
+    'region.rs': 'Srbsko',
+
     // Waypoint Parameters
     'waypoint.height': 'Výška (m)',
     'waypoint.speed': 'Rychlost (m/s)',
@@ -311,6 +316,11 @@ const translations: Record<Language, Translations> = {
 
     'map.powerlines.show': '⚡ Show power line protection zones',
     'map.powerlines.hide': '⚡ Hide power line protection zones',
+
+    // Data region
+    'region.coverage': 'Data coverage',
+    'region.cz': 'Czech Republic',
+    'region.rs': 'Serbia',
 
     // Sidebar – Controls
     'sidebar.newMission': '➕ New Mission',

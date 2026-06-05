@@ -634,7 +634,7 @@ export default function Sidebar({
               : 'bg-[#0f1117] border-gray-600 text-gray-300 hover:border-orange-500 hover:text-white'
           }`}
         >
-          {showAirspace ? '🚧 Skrýt letové zóny' : '🚧 Zobrazit letové zóny'}
+          {showAirspace ? t('map.airspace.hide') : t('map.airspace.show')}
         </button>
         <button
           onClick={onToggleProtectedAreas}
@@ -644,7 +644,7 @@ export default function Sidebar({
               : 'bg-[#0f1117] border-gray-600 text-gray-300 hover:border-green-500 hover:text-white'
           }`}
         >
-          {showProtectedAreas ? '🌿 Skrýt NP a CHKO' : '🌿 Zobrazit NP a CHKO'}
+          {showProtectedAreas ? t('map.protected.hide') : t('map.protected.show')}
         </button>
         <button
           onClick={onToggleSmallReserves}
@@ -654,7 +654,7 @@ export default function Sidebar({
               : 'bg-[#0f1117] border-gray-600 text-gray-300 hover:border-emerald-500 hover:text-white'
           }`}
         >
-          {showSmallReserves ? '🌱 Skrýt přírodní rezervace' : '🌱 Přírodní rezervace (NPR/PP)'}
+          {showSmallReserves ? t('map.reserves.hide') : t('map.reserves.show')}
         </button>
         <button
           onClick={onToggleWaterSources}
@@ -664,7 +664,7 @@ export default function Sidebar({
               : 'bg-[#0f1117] border-gray-600 text-gray-300 hover:border-sky-500 hover:text-white'
           }`}
         >
-          {showWaterSources ? '💧 Skrýt vodní zdroje' : '💧 Vodní zdroje (nádrže)'}
+          {showWaterSources ? t('map.water.hide') : t('map.water.show')}
         </button>
         <button
           onClick={onToggleRailways}
@@ -674,7 +674,7 @@ export default function Sidebar({
               : 'bg-[#0f1117] border-gray-600 text-gray-300 hover:border-red-500 hover:text-white'
           }`}
         >
-          {showRailways ? '🚂 Skrýt železnice' : '🚂 Železnice (ochran. pásma)'}
+          {showRailways ? t('map.railways.hide') : t('map.railways.show')}
         </button>
         <button
           onClick={onToggleRoads}
@@ -684,7 +684,7 @@ export default function Sidebar({
               : 'bg-[#0f1117] border-gray-600 text-gray-300 hover:border-amber-500 hover:text-white'
           }`}
         >
-          {showRoads ? '🛣️ Skrýt silnice' : '🛣️ Silnice (ochran. pásma)'}
+          {showRoads ? t('map.roads.hide') : t('map.roads.show')}
         </button>
         <button
           onClick={onTogglePowerlines}
@@ -694,7 +694,7 @@ export default function Sidebar({
               : 'bg-[#0f1117] border-gray-600 text-gray-300 hover:border-yellow-500 hover:text-white'
           }`}
         >
-          {showPowerlines ? '⚡ Skrýt el. vedení' : '⚡ El. vedení (ochran. pásma)'}
+          {showPowerlines ? t('map.powerlines.hide') : t('map.powerlines.show')}
         </button>
       </div>
 

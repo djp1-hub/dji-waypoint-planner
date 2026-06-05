@@ -325,7 +325,7 @@ function placemarkXml(
         <wpml:waypointSpeed>${formatNumber(speed, 1)}</wpml:waypointSpeed>
 ${headingParamXml(mission, wp, index)}
 ${turnParamXml()}
-        <wpml:useStraightLine>0</wpml:useStraightLine>
+        <wpml:useStraightLine>1</wpml:useStraightLine>
 ${actionGroupsXml(wp, index, lastIndex)}
 ${waypointGimbalHeadingParamXml()}
       </Placemark>`;

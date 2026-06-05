@@ -193,16 +193,63 @@ export default function HomePage() {
   }, []);
 
   // ── Share mission as URL ──────────────────────────────────────
-  const handleShareMission = useCallback(() => {
-    const effectiveMissionType: MissionType = appMode === 'film' ? 'film' : missionType;
-    const encoded = encodeMission({ waypoints, missionType: effectiveMissionType });
-    const url = `${window.location.origin}?mission=${encoded}`;
-    navigator.clipboard.writeText(url).then(() => {
+function copyTextFallback(text: string): boolean {
+  const textarea = document.createElement('textarea');
+
+  textarea.value = text;
+  textarea.setAttribute('readonly', 'true');
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  textarea.style.top = '-9999px';
+
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  try {
+    const ok = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return ok;
+  } catch {
+    document.body.removeChild(textarea);
+    return false;
+  }
+}
+
+const handleShareMission = useCallback(async () => {
+  const encoded = encodeMission({
+    waypoints,
+    missionType: effectiveMissionType,
+  });
+
+  const url = `${window.location.origin}?mission=${encoded}`;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
       showToast('🔗 Odkaz zkopírován!');
-    }).catch(() => {
-      showToast('❌ Kopírování selhalo');
-    });
-  }, [waypoints, missionType, appMode, showToast]);
+      return;
+    }
+
+    const copied = copyTextFallback(url);
+
+    if (copied) {
+      showToast('🔗 Odkaz zkopírován!');
+      return;
+    }
+
+    window.prompt('Zkopírujte odkaz ručně:', url);
+  } catch {
+    const copied = copyTextFallback(url);
+
+    if (copied) {
+      showToast('🔗 Odkaz zkopírován!');
+      return;
+    }
+
+    window.prompt('Zkopírujte odkaz ručně:', url);
+  }
+}, [waypoints, effectiveMissionType, showToast]);
 
   // ── KMZ import ───────────────────────────────────────────────
 

@@ -63,6 +63,20 @@ const translations: Record<Language, Translations> = {
     'sidebar.terrain': '🏔 Terrain Following',
     'sidebar.3dPreview': '🔭 3D náhled',
     'sidebar.share': '🔗 Sdílet misi',
+    'map.airspace.show': '🚧 Zobrazit letové zóny',
+    'map.airspace.hide': '🚧 Skrýt letové zóny',
+    'map.protected.show': '🌿 Zobrazit NP a CHKO',
+    'map.protected.hide': '🌿 Skrýt NP a CHKO',
+    'map.reserves.show': '🌱 Přírodní rezervace (NPR/PP)',
+    'map.reserves.hide': '🌱 Skrýt přírodní rezervace',
+    'map.water.show': '💧 Vodní zdroje (nádrže)',
+    'map.water.hide': '💧 Skrýt vodní zdroje',
+    'map.railways.show': '🚂 Železnice (ochran. pásma)',
+    'map.railways.hide': '🚂 Skrýt železnice',
+    'map.roads.show': '🛣️ Silnice (ochran. pásma)',
+    'map.roads.hide': '🛣️ Skrýt silnice',
+    'map.powerlines.show': '⚡ El. vedení (ochran. pásma)',
+    'map.powerlines.hide': '⚡ Skrýt el. vedení',
 
     // Waypoint Parameters
     'waypoint.height': 'Výška (m)',
@@ -277,6 +291,26 @@ const translations: Record<Language, Translations> = {
     'btn.reset': 'Reset',
     'btn.confirm': 'Confirm',
     'btn.share': 'Share',
+    'map.airspace.show': '🚧 Show airspace zones',
+    'map.airspace.hide': '🚧 Hide airspace zones',
+
+    'map.protected.show': '🌿 Show national parks and protected areas',
+    'map.protected.hide': '🌿 Hide national parks and protected areas',
+
+    'map.reserves.show': '🌱 Show nature reserves (NPR/PP)',
+    'map.reserves.hide': '🌱 Hide nature reserves',
+
+    'map.water.show': '💧 Show water sources',
+    'map.water.hide': '💧 Hide water sources',
+
+    'map.railways.show': '🚂 Show railway protection zones',
+    'map.railways.hide': '🚂 Hide railway protection zones',
+
+    'map.roads.show': '🛣️ Show road protection zones',
+    'map.roads.hide': '🛣️ Hide road protection zones',
+
+    'map.powerlines.show': '⚡ Show power line protection zones',
+    'map.powerlines.hide': '⚡ Hide power line protection zones',
 
     // Sidebar – Controls
     'sidebar.newMission': '➕ New Mission',

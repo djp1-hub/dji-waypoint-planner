@@ -12,6 +12,7 @@ const nextConfig = {
   // next-pwa přidá webpack config která má přednost.
   turbopack: {},
   // No transpilePackages needed — Cesium is loaded via CDN script tag
+  allowedDevOrigins: ['192.168.0.12'],
 };
 
 module.exports = withPWA(nextConfig);

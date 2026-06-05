@@ -4,7 +4,6 @@
 import dynamic from 'next/dynamic';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
 import SaveMissionDialog from '@/components/SaveMissionDialog';
 import { Waypoint, Mission, MissionType, Drone } from '@/lib/types';
 import { exportKMZ } from '@/lib/exportKMZ';
@@ -18,6 +17,8 @@ import { generateId } from '@/lib/panelUtils';
 
 // Leaflet map must be loaded client-side only (it uses browser APIs)
 const MapView = dynamic(() => import('@/components/Map'), { ssr: false });
+// Sidebar uses useLanguage hook which requires LanguageProvider context — delay until mounted
+const Sidebar = dynamic(() => import('@/components/Sidebar'), { ssr: false });
 
 /** Shot types available in film mode */
 export type FilmType = 'dronie' | 'reveal' | 'topdown' | 'craneup' | 'hyperlapse' | 'arcshot' | 'boomerang' | 'rocket' | 'poisequence';

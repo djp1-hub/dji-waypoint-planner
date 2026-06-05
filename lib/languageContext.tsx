@@ -43,7 +43,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     return getTranslation(language, key);
   };
 
-  // Prevent hydration mismatch
+  // Prevent hydration mismatch by not rendering children that need context until mounted
   if (!mounted) {
     return <>{children}</>;
   }
@@ -58,6 +58,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 export function useLanguage(): LanguageContextType {
   const context = useContext(LanguageContext);
   if (context === undefined) {
+    // Return a default context instead of throwing during SSR/hydration
+    if (typeof window === 'undefined') {
+      // We're on the server, return defaults
+      return {
+        language: DEFAULT_LANGUAGE,
+        setLanguage: () => {},
+        t: (key: string) => getTranslation(DEFAULT_LANGUAGE, key),
+      };
+    }
     throw new Error('useLanguage must be used within LanguageProvider');
   }
   return context;

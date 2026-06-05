@@ -217,9 +217,11 @@ function copyTextFallback(text: string): boolean {
 }
 
 const handleShareMission = useCallback(async () => {
+  const shareMissionType: MissionType = appMode === 'film' ? 'film' : missionType;
+
   const encoded = encodeMission({
     waypoints,
-    missionType: effectiveMissionType,
+    missionType: shareMissionType,
   });
 
   const url = `${window.location.origin}?mission=${encoded}`;
@@ -249,7 +251,7 @@ const handleShareMission = useCallback(async () => {
 
     window.prompt('Zkopírujte odkaz ručně:', url);
   }
-}, [waypoints, effectiveMissionType, showToast]);
+}, [waypoints, missionType, appMode, showToast]);
 
   // ── KMZ import ───────────────────────────────────────────────
 

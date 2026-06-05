@@ -118,16 +118,19 @@ export function generatePolygonGridWaypoints(
 
   const localPolygon = polygon.map((p) => latLngToMeters(p, origin));
 
-  // Rotate polygon so flight lines become horizontal scan lines.
+  // Поворачиваем полигон так, чтобы проходы стали горизонтальными линиями.
   const rotatedPolygon = localPolygon.map((p) => rotatePoint(p, -angleRad));
   const box = bbox(rotatedPolygon);
 
-  // Same simplified swath model as GridPanel.
-  const swath = params.height * 1.4;
-  const rowSpacing = swath * (1 - params.overlap / 100);
+  // Упрощённая модель покрытия камеры.
+  // При 60 м и overlap 70% шаг получится около 25 м.
+  const footprintAcrossM = params.height * 1.4;
+  const footprintAlongM = params.height * 1.4;
 
-  const route: Point[] = [];
-  let rowIndex = 0;
+  const rowSpacing = footprintAcrossM * (1 - params.overlap / 100);
+  const photoSpacing = footprintAlongM * (1 - params.overlap / 100);
+
+  const rows: Point[][] = [];
 
   for (let y = box.minY; y <= box.maxY; y += rowSpacing) {
     const intersections: number[] = [];
@@ -145,7 +148,8 @@ export function generatePolygonGridWaypoints(
 
     intersections.sort((a, b) => a - b);
 
-    // Every pair of intersections is one inside-polygon segment.
+    const rowSegments: Point[][] = [];
+
     for (let i = 0; i + 1 < intersections.length; i += 2) {
       const x1 = intersections[i];
       const x2 = intersections[i + 1];
@@ -154,18 +158,36 @@ export function generatePolygonGridWaypoints(
         continue;
       }
 
-      const a: Point = { x: x1, y };
-      const b: Point = { x: x2, y };
+      const start: Point = { x: x1, y };
+      const end: Point = { x: x2, y };
 
-      if (rowIndex % 2 === 0) {
-        route.push(a, b);
-      } else {
-        route.push(b, a);
+      const points = pointsAlongSegment(start, end, photoSpacing);
+
+      if (points.length > 0) {
+        rowSegments.push(points);
       }
-
-      rowIndex++;
     }
+
+    if (rowSegments.length === 0) {
+      continue;
+    }
+
+    // Для обычного полигона это будет один сегмент на строку.
+    // Для вогнутого полигона может быть несколько сегментов.
+    const rowPoints = rowSegments.flat();
+
+    rows.push(rowPoints);
   }
+
+  const route: Point[] = [];
+
+  rows.forEach((rowPoints, rowIndex) => {
+    if (rowIndex % 2 === 0) {
+      route.push(...rowPoints);
+    } else {
+      route.push(...[...rowPoints].reverse());
+    }
+  });
 
   return route.map((p, index) => {
     const unrotated = rotatePoint(p, angleRad);

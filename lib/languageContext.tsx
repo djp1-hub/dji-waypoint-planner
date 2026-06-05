@@ -15,23 +15,22 @@ const LANGUAGE_STORAGE_KEY = 'dji-planner-language';
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>(DEFAULT_LANGUAGE);
-  const [mounted, setMounted] = useState(false);
 
-  // Load language from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY) as Language | null;
+
     if (stored && (stored === 'cs' || stored === 'en')) {
       setLanguageState(stored);
-    } else {
-      // Try to detect browser language
-      const browserLang = navigator.language.toLowerCase();
-      if (browserLang.startsWith('cs')) {
-        setLanguageState('cs');
-      } else if (browserLang.startsWith('en')) {
-        setLanguageState('en');
-      }
+      return;
     }
-    setMounted(true);
+
+    const browserLang = navigator.language.toLowerCase();
+
+    if (browserLang.startsWith('cs')) {
+      setLanguageState('cs');
+    } else if (browserLang.startsWith('en')) {
+      setLanguageState('en');
+    }
   }, []);
 
   const setLanguage = (lang: Language) => {
@@ -43,11 +42,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     return getTranslation(language, key);
   };
 
-  // Prevent hydration mismatch by not rendering children that need context until mounted
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t }}>
       {children}
@@ -57,22 +51,22 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
 export function useLanguage(): LanguageContextType {
   const context = useContext(LanguageContext);
+
   if (context === undefined) {
-    // Return a default context instead of throwing during SSR/hydration
     if (typeof window === 'undefined') {
-      // We're on the server, return defaults
       return {
         language: DEFAULT_LANGUAGE,
         setLanguage: () => {},
         t: (key: string) => getTranslation(DEFAULT_LANGUAGE, key),
       };
     }
+
     throw new Error('useLanguage must be used within LanguageProvider');
   }
+
   return context;
 }
 
-// Shorthand hook for translations only
 export function useTranslation() {
   const { t } = useLanguage();
   return { t };

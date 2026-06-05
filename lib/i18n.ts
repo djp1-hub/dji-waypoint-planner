@@ -458,27 +458,19 @@ const translations: Record<Language, Translations> = {
 };
 
 export function getTranslation(language: Language, key: string): string {
-  const keys = key.split('.');
-  let value: any = translations[language];
+  const current = translations[language]?.[key];
 
-  for (const k of keys) {
-    if (value && typeof value === 'object') {
-      value = value[k];
-    } else {
-      // Fallback to English if key not found
-      value = translations.en;
-      for (const fallbackKey of keys) {
-        if (value && typeof value === 'object') {
-          value = value[fallbackKey];
-        } else {
-          return key; // Return key as-is if not found
-        }
-      }
-      return value as string;
-    }
+  if (typeof current === 'string') {
+    return current;
   }
 
-  return (value as string) || key;
+  const fallback = translations.en?.[key];
+
+  if (typeof fallback === 'string') {
+    return fallback;
+  }
+
+  return key;
 }
 
 export const DEFAULT_LANGUAGE: Language = 'cs';

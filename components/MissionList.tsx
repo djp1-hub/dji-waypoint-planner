@@ -8,6 +8,7 @@ const MISSION_TYPE_LABELS: Record<MissionType, string> = {
   waypoints: 'Waypointy',
   spiral: 'Spirála',
   grid: 'Grid',
+  polygonGrid: 'Polygon grid',
   orbit: 'Orbit',
   facade: 'Fasáda',
   film: 'Film',

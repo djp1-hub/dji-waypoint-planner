@@ -177,6 +177,8 @@ interface MapProps {
   onUpdateWaypoint: (id: string, lat: number, lng: number) => void;
   onCenterChange: (lat: number, lng: number) => void;
   gridRect: [[number, number], [number, number]] | null;
+  polygonPoints: { lat: number; lng: number }[];
+  polygonDrawActive: boolean;
   facadeLine: [[number, number], [number, number]] | null;
   buildingPolygon: [[number, number], [number, number], [number, number], [number, number]] | null;
   flyToTarget: { lat: number; lng: number; zoom: number } | null;
@@ -200,6 +202,8 @@ export default function MapView({
   onUpdateWaypoint,
   onCenterChange,
   gridRect,
+  polygonPoints,
+  polygonDrawActive,
   facadeLine,
   buildingPolygon,
   flyToTarget,
@@ -280,8 +284,12 @@ export default function MapView({
     });
   }, [waypoints, draggableMarkers, onUpdateWaypoint]);
 
-  const polylinePositions = waypoints.map((wp) => [wp.lat, wp.lng] as [number, number]);
+const polygonPositions = polygonPoints.map((p) => [p.lat, p.lng] as [number, number]);
 
+const polygonDraftPositions =
+  polygonDrawActive && polygonPositions.length > 1
+    ? polygonPositions
+    : polygonPositions;
   return (
     <MapContainer
       center={[50.08, 14.42]}
@@ -331,6 +339,29 @@ export default function MapView({
         <Rectangle
           bounds={gridRect}
           pathOptions={{ color: '#f59e0b', weight: 2, fillOpacity: 0.1, fillColor: '#f59e0b' }}
+        />
+      )}
+      {/* Polygon grid area */}
+      {polygonDraftPositions.length >= 2 && (
+        <Polyline
+          positions={polygonDraftPositions}
+          pathOptions={{
+            color: '#22c55e',
+            weight: 2,
+            dashArray: polygonDrawActive ? '6 4' : undefined,
+          }}
+        />
+      )}
+
+      {polygonPositions.length >= 3 && (
+        <Polygon
+          positions={polygonPositions}
+          pathOptions={{
+            color: '#22c55e',
+            weight: 2,
+            fillOpacity: 0.08,
+            fillColor: '#22c55e',
+          }}
         />
       )}
 

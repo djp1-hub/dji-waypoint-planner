@@ -239,6 +239,8 @@ export default function HomePage() {
   const [gridDrawStep, setGridDrawStep] = useState<'idle' | 'sw' | 'ne'>('idle');
   // Temporary SW corner while waiting for NE click
   const [pendingSw, setPendingSw] = useState<[number, number] | null>(null);
+  const [polygonPoints, setPolygonPoints] = useState<{ lat: number; lng: number }[]>([]);
+  const [polygonDrawActive, setPolygonDrawActive] = useState(false);
 
   // ── Orbit state ──────────────────────────────────────────────
   const [poi, setPoi] = useState<{ lat: number; lng: number } | null>(null);
@@ -394,7 +396,11 @@ export default function HomePage() {
       setFacadeDrawStep('idle');
       return;
     }
-
+    // Polygon grid drawing
+    if (polygonDrawActive) {
+      setPolygonPoints((prev) => [...prev, { lat, lng }]);
+      return;
+    }
     // Grid corner selection
     if (gridDrawStep === 'sw') {
       setPendingSw([lat, lng]);
@@ -421,6 +427,7 @@ export default function HomePage() {
     hyperlapseSelectStep, isSelectingArcShotPoi,
     boomerangSelectStep, isSelectingRocket, isSelectingPoiSeq,
     isSelectingPoi, facadeDrawStep, pendingFacadeA, gridDrawStep, pendingSw,
+    polygonDrawActive,
     missionType, facadeMode,
   ]);
 
@@ -575,9 +582,10 @@ export default function HomePage() {
 
   // Show crosshair cursor when the user is placing a point on the map
   const crosshairCursor =
-    isSelectingPoi ||
     gridDrawStep !== 'idle' ||
+    polygonDrawActive ||
     facadeDrawStep !== 'idle' ||
+    isSelectingPoi ||
     isAnyFilmSelecting;
 
   // Markers are draggable in waypoints mode and in facade 360° mode (to fine-tune corners)
@@ -629,6 +637,17 @@ export default function HomePage() {
         gridCorners={gridCorners}
         gridDrawStep={gridDrawStep}
         onStartDrawGrid={() => setGridDrawStep('sw')}
+        polygonPoints={polygonPoints}
+        polygonDrawActive={polygonDrawActive}
+        onStartDrawPolygon={() => {
+          setPolygonPoints([]);
+          setPolygonDrawActive(true);
+        }}
+        onFinishDrawPolygon={() => setPolygonDrawActive(false)}
+        onClearPolygon={() => {
+          setPolygonPoints([]);
+          setPolygonDrawActive(false);
+        }}
         poi={poi}
         isSelectingPoi={isSelectingPoi}
         onSelectPoi={() => setIsSelectingPoi(true)}
@@ -726,6 +745,8 @@ export default function HomePage() {
           onUpdateWaypoint={handleUpdateWaypointPosition}
           onCenterChange={(lat, lng) => setMapCenter({ lat, lng })}
           gridRect={gridRect}
+          polygonPoints={polygonPoints}
+          polygonDrawActive={polygonDrawActive}
           facadeLine={facadeLine}
           buildingPolygon={buildingPolygon}
           flyToTarget={flyToTarget}

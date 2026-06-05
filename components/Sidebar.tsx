@@ -8,6 +8,7 @@ import TerrainFollowingButton from './TerrainFollowingButton';
 import WaypointPanel from './WaypointPanel';
 import SpiralPanel from './SpiralPanel';
 import GridPanel from './GridPanel';
+import PolygonGridPanel from './PolygonGridPanel';
 import OrbitPanel from './OrbitPanel';
 import FacadePanel from './FacadePanel';
 import DroniePanel from './film/DroniePanel';
@@ -34,6 +35,7 @@ const PHOTO_TABS: { type: MissionType; label: string }[] = [
   { type: 'waypoints', label: 'Body' },
   { type: 'spiral', label: 'Spirala' },
   { type: 'grid', label: 'Grid' },
+  { type: 'polygonGrid', label: 'Polygon' },
   { type: 'orbit', label: 'Orbit' },
   { type: 'facade', label: 'Fasada' },
 ];
@@ -71,6 +73,11 @@ interface SidebarProps {
   gridCorners: { sw: [number, number]; ne: [number, number] } | null;
   gridDrawStep: 'idle' | 'sw' | 'ne';
   onStartDrawGrid: () => void;
+  polygonPoints: { lat: number; lng: number }[];
+  polygonDrawActive: boolean;
+  onStartDrawPolygon: () => void;
+  onFinishDrawPolygon: () => void;
+  onClearPolygon: () => void;
   // Orbit
   poi: { lat: number; lng: number } | null;
   isSelectingPoi: boolean;
@@ -218,6 +225,11 @@ export default function Sidebar({
   gridCorners,
   gridDrawStep,
   onStartDrawGrid,
+  polygonPoints,
+  polygonDrawActive,
+  onStartDrawPolygon,
+  onFinishDrawPolygon,
+  onClearPolygon,
   poi,
   isSelectingPoi,
   onSelectPoi,
@@ -413,11 +425,13 @@ export default function Sidebar({
           />
         )}
 
-        {appMode === 'photo' && missionType === 'grid' && (
-          <GridPanel
-            gridCorners={gridCorners}
-            drawStep={gridDrawStep}
-            onStartDraw={onStartDrawGrid}
+        {appMode === 'photo' && missionType === 'polygonGrid' && (
+          <PolygonGridPanel
+            polygonPoints={polygonPoints}
+            polygonDrawActive={polygonDrawActive}
+            onStartDraw={onStartDrawPolygon}
+            onFinishDraw={onFinishDrawPolygon}
+            onClearPolygon={onClearPolygon}
             onGenerate={onSetWaypoints}
           />
         )}

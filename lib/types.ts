@@ -4,7 +4,14 @@
 export type CameraAction = 'none' | 'photo' | 'startVideo' | 'stopVideo';
 
 /** Mission types supported by the application */
-export type MissionType = 'waypoints' | 'spiral' | 'grid' | 'orbit' | 'facade' | 'film';
+export type MissionType =
+  | 'waypoints'
+  | 'spiral'
+  | 'grid'
+  | 'polygonGrid'
+  | 'orbit'
+  | 'facade'
+  | 'film';
 
 /** A single waypoint in a mission */
 export interface Waypoint {

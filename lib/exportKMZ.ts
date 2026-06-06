@@ -69,15 +69,7 @@ function bearingDeg(a: Waypoint, b: Waypoint): number {
   return normalizeHeading(bearing);
 }
 
-function waypointHeadingAngle(
-  mission: Mission,
-  wp: Waypoint,
-  index: number,
-): number {
-  if (typeof wp.headingAngle === 'number') {
-    return normalizeHeading(wp.headingAngle);
-  }
-
+function waypointFlightHeadingAngle(mission: Mission, index: number): number {
   const points = mission.waypoints;
 
   if (points.length <= 1) {
@@ -89,6 +81,21 @@ function waypointHeadingAngle(
   }
 
   return bearingDeg(points[index - 1], points[index]);
+}
+
+function waypointCameraYawAngle(
+  mission: Mission,
+  wp: Waypoint,
+  index: number,
+): number {
+  if (typeof wp.headingAngle !== 'number') {
+    return 0;
+  }
+
+  // headingAngle remains the user-defined camera/POI direction.
+  // Aircraft yaw is generated from the route segment, so POI yaw is applied
+  // to the gimbal relative to the aircraft nose instead of rotating the drone.
+  return normalizeHeading(wp.headingAngle - waypointFlightHeadingAngle(mission, index));
 }
 
 function missionConfigXml(mission: Mission, droneEnumValue: number): string {
@@ -122,16 +129,14 @@ ${missionConfigXml(mission, droneEnumValue)}
 `;
 }
 
-function headingParamXml(mission: Mission, wp: Waypoint, index: number): string {
-  const headingAngle = waypointHeadingAngle(mission, wp, index);
+function headingParamXml(mission: Mission, index: number): string {
+  const headingAngle = waypointFlightHeadingAngle(mission, index);
 
   return `        <wpml:waypointHeadingParam>
           <wpml:waypointHeadingMode>smoothTransition</wpml:waypointHeadingMode>
           <wpml:waypointHeadingAngle>${headingAngle.toFixed(1)}</wpml:waypointHeadingAngle>
-          <wpml:waypointPoiPoint>0.000000,0.000000,0.000000</wpml:waypointPoiPoint>
           <wpml:waypointHeadingAngleEnable>1</wpml:waypointHeadingAngleEnable>
           <wpml:waypointHeadingPathMode>followBadArc</wpml:waypointHeadingPathMode>
-          <wpml:waypointHeadingPoiIndex>0</wpml:waypointHeadingPoiIndex>
         </wpml:waypointHeadingParam>`;
 }
 
@@ -331,12 +336,17 @@ function actionGroupsXml(
   return groups.filter(Boolean).join('\n');
 }
 
-function waypointGimbalHeadingParamXml(wp: Waypoint): string {
+function waypointGimbalHeadingParamXml(
+  mission: Mission,
+  wp: Waypoint,
+  index: number,
+): string {
   const pitch = typeof wp.gimbalPitch === 'number' ? wp.gimbalPitch : -90;
+  const yaw = waypointCameraYawAngle(mission, wp, index);
 
   return `        <wpml:waypointGimbalHeadingParam>
           <wpml:waypointGimbalPitchAngle>${pitch}</wpml:waypointGimbalPitchAngle>
-          <wpml:waypointGimbalYawAngle>0</wpml:waypointGimbalYawAngle>
+          <wpml:waypointGimbalYawAngle>${yaw.toFixed(1)}</wpml:waypointGimbalYawAngle>
         </wpml:waypointGimbalHeadingParam>`;
 }
 
@@ -358,11 +368,11 @@ function placemarkXml(
         <wpml:index>${index}</wpml:index>
         <wpml:executeHeight>${formatNumber(height, 1)}</wpml:executeHeight>
         <wpml:waypointSpeed>${formatNumber(speed, 1)}</wpml:waypointSpeed>
-${headingParamXml(mission, wp, index)}
+${headingParamXml(mission, index)}
 ${turnParamXml()}
         <wpml:useStraightLine>1</wpml:useStraightLine>
 ${actionGroupsXml(wp, index, lastIndex)}
-${waypointGimbalHeadingParamXml(wp)}
+${waypointGimbalHeadingParamXml(mission, wp, index)}
       </Placemark>`;
 }
 

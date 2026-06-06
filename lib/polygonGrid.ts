@@ -12,11 +12,13 @@ interface Point {
 }
 
 export type PolygonPhotoMode = 'waypoint' | 'interval';
+export type PolygonGridPattern = 'single' | 'crosshatch';
 
 export interface PolygonGridParams {
   height: number;
   overlap: number;
   direction: number;
+  pattern: PolygonGridPattern;
   speed: number;
   gimbalPitch: number;
   photoMode: PolygonPhotoMode;
@@ -265,6 +267,46 @@ export function getPolygonGridDerivedParams(params: PolygonGridParams) {
   return calculateCoverage(params);
 }
 
+function buildRouteForDirection(
+  localPolygon: Point[],
+  direction: number,
+  rowSpacing: number,
+  photoSpacing: number,
+  photoMode: PolygonPhotoMode,
+): Point[] {
+  const angleRad = (direction * Math.PI) / 180;
+  const rotatedPolygon = localPolygon.map((p) => rotatePoint(p, -angleRad));
+  const rows = buildRows(rotatedPolygon, rowSpacing, photoSpacing, photoMode);
+  const route = buildSnakeRoute(rows);
+
+  return route.map((p) => rotatePoint(p, angleRad));
+}
+
+function connectRoutes(routes: Point[][]): Point[] {
+  const result: Point[] = [];
+
+  routes.forEach((route) => {
+    if (route.length === 0) {
+      return;
+    }
+
+    if (result.length === 0) {
+      result.push(...route);
+      return;
+    }
+
+    const last = result[result.length - 1];
+    const forwardStartDistance = distance(last, route[0]);
+    const reverseStartDistance = distance(last, route[route.length - 1]);
+    const routeToAppend =
+      reverseStartDistance < forwardStartDistance ? [...route].reverse() : route;
+
+    result.push(...routeToAppend);
+  });
+
+  return deduplicateSequentialPoints(result);
+}
+
 export function generatePolygonGridWaypoints(
   polygon: LatLng[],
   params: PolygonGridParams,
@@ -295,12 +337,14 @@ export function generatePolygonGridWaypoints(
       ? Math.min(0, Math.max(-90, params.gimbalPitch))
       : -90;
 
+  const normalizedDirection = ((params.direction % 360) + 360) % 360;
+  const pattern = params.pattern ?? 'single';
   const origin = polygonCentroid(polygon);
-  const angleRad = (params.direction * Math.PI) / 180;
   const localPolygon = polygon.map((p) => latLngToMeters(p, origin));
-  const rotatedPolygon = localPolygon.map((p) => rotatePoint(p, -angleRad));
   const normalizedParams = {
     ...params,
+    direction: normalizedDirection,
+    pattern,
     photoIntervalSec: safePhotoIntervalSec,
     gimbalPitch: safeGimbalPitch,
   };
@@ -312,12 +356,32 @@ export function generatePolygonGridWaypoints(
       ? cappedIntervalSpeed
       : params.speed;
 
-  const rows = buildRows(rotatedPolygon, rowSpacing, photoSpacing, params.photoMode);
-  const route = buildSnakeRoute(rows);
+  const firstRoute = buildRouteForDirection(
+    localPolygon,
+    normalizedDirection,
+    rowSpacing,
+    photoSpacing,
+    params.photoMode,
+  );
+
+  const routes = [firstRoute];
+
+  if (pattern === 'crosshatch') {
+    routes.push(
+      buildRouteForDirection(
+        localPolygon,
+        (normalizedDirection + 90) % 360,
+        rowSpacing,
+        photoSpacing,
+        params.photoMode,
+      ),
+    );
+  }
+
+  const route = connectRoutes(routes);
 
   return route.map((p, index) => {
-    const unrotated = rotatePoint(p, angleRad);
-    const latLng = metersToLatLng(unrotated, origin);
+    const latLng = metersToLatLng(p, origin);
 
     return {
       id: generateId('polygrid', index),

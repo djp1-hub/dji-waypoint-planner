@@ -5,6 +5,7 @@ import { Waypoint } from '@/lib/types';
 import {
   LatLng,
   PolygonGridParams,
+  PolygonGridPattern,
   PolygonPhotoMode,
   estimatePolygonGridStats,
   generatePolygonGridWaypoints,
@@ -41,6 +42,7 @@ export default function PolygonGridPanel({
     height: 60,
     overlap: 70,
     direction: 0,
+    pattern: 'single',
     speed: 5,
     gimbalPitch: -90,
     photoMode: 'waypoint',
@@ -85,6 +87,10 @@ export default function PolygonGridPanel({
 
   function setPhotoMode(value: PolygonPhotoMode) {
     setParams((prev) => ({ ...prev, photoMode: value }));
+  }
+
+  function setPattern(value: PolygonGridPattern) {
+    setParams((prev) => ({ ...prev, pattern: value }));
   }
 
   function handleNumberInput(
@@ -211,6 +217,18 @@ export default function PolygonGridPanel({
         </div>
 
         <div className="flex flex-col gap-1">
+          <label className="text-gray-500 text-xs">Survey pattern</label>
+          <select
+            value={params.pattern}
+            onChange={(e) => setPattern(e.target.value as PolygonGridPattern)}
+            className="bg-[#0f1117] text-white text-xs rounded px-2 py-1.5 border border-gray-700 focus:border-blue-500 focus:outline-none"
+          >
+            <option value="single">Single direction</option>
+            <option value="crosshatch">Crosshatch +90°</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1">
           <label className="text-gray-500 text-xs">Speed (m/s)</label>
           <input
             type="number"
@@ -303,6 +321,12 @@ export default function PolygonGridPanel({
           <span>
             Speed: <span className="text-white">{stats.effectiveSpeedMs} m/s</span>
           </span>
+          <span className="col-span-2">
+            Pattern:{' '}
+            <span className="text-white">
+              {params.pattern === 'crosshatch' ? 'Crosshatch +90°' : 'Single direction'}
+            </span>
+          </span>
           {params.photoMode === 'interval' && (
             <span className="col-span-2">
               Interval speed target:{' '}
@@ -323,7 +347,7 @@ export default function PolygonGridPanel({
 
       {stats && stats.waypointCount > 200 && (
         <div className="bg-red-900/30 border border-red-700 rounded-lg p-2 text-xs text-red-400">
-          DJI Fly waypoint limit exceeded. Increase height, reduce overlap, switch to interval photos, or use a smaller polygon.
+          DJI Fly waypoint limit exceeded. Increase height, reduce overlap, switch to interval photos, use single direction, or use a smaller polygon.
         </div>
       )}
 
@@ -338,7 +362,7 @@ export default function PolygonGridPanel({
         disabled={!canGenerate || Boolean(statsError) || (stats?.waypointCount ?? 0) > 200}
         className="w-full py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        Generate polygon grid
+        Generate polygon survey
       </button>
     </div>
   );

@@ -59,50 +59,6 @@ function loadCesiumScript(): Promise<void> {
   });
 }
 
-
-function errorToMessage(err: unknown): string {
-  if (err instanceof Error) {
-    return err.message;
-  }
-
-  if (typeof err === 'string') {
-    return err;
-  }
-
-  try {
-    return JSON.stringify(err);
-  } catch {
-    return String(err);
-  }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function createSafeTerrainProvider(Cesium: any) {
-  if (!CESIUM_TOKEN) {
-    console.warn('[preview-3d] NEXT_PUBLIC_CESIUM_TOKEN is empty, using flat terrain fallback');
-    return new Cesium.EllipsoidTerrainProvider();
-  }
-
-  try {
-    return await Cesium.createWorldTerrainAsync({
-      requestWaterMask: true,
-      requestVertexNormals: true,
-    });
-  } catch (err) {
-    console.warn('[preview-3d] World terrain failed, using flat terrain fallback:', errorToMessage(err));
-    return new Cesium.EllipsoidTerrainProvider();
-  }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function createSafeImageryProvider(Cesium: any) {
-  // Do not use Cesium ion default imagery here: it fails when the token is empty
-  // or when ion is unreachable. OSM tiles are enough for route preview fallback.
-  return new Cesium.OpenStreetMapImageryProvider({
-    url: 'https://tile.openstreetmap.org/',
-  });
-}
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function Preview3DPage() {
@@ -135,14 +91,12 @@ export default function Preview3DPage() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let viewer: any = null;
-    let cancelled = false;
 
     (async () => {
       try {
         // 1. Load Cesium from CDN via script tag
         setLoading(t('preview.loadingCesium'));
         await loadCesiumScript();
-        if (cancelled) return;
         const Cesium = window.Cesium;
 
         Cesium.Ion.defaultAccessToken = CESIUM_TOKEN;
@@ -187,7 +141,6 @@ export default function Preview3DPage() {
           const elevRes = await fetch(
             `https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`,
           );
-          if (cancelled) return;
           if (elevRes.ok) {
             const elevData = await elevRes.json() as { elevation: number[] };
             groundElevs = elevData.elevation ?? groundElevs;
@@ -198,12 +151,11 @@ export default function Preview3DPage() {
 
         // 4. Create Cesium Viewer with World Terrain + Bing satellite imagery
         setLoading(t('preview.init3d'));
-        const terrainProvider = await createSafeTerrainProvider(Cesium);
-        if (cancelled) return;
-
         viewer = new Cesium.Viewer(containerRef.current!, {
-          terrainProvider,
-          imageryProvider: createSafeImageryProvider(Cesium),
+          terrainProvider: await Cesium.createWorldTerrainAsync({
+            requestWaterMask: true,
+            requestVertexNormals: true,
+          }),
           baseLayerPicker: false,
           geocoder: false,
           homeButton: false,
@@ -223,19 +175,13 @@ export default function Preview3DPage() {
         creditContainer.style.fontSize = '10px';
         creditContainer.style.opacity = '0.6';
 
-        // 5. OSM Buildings — requires Cesium ion. If token/API is unavailable,
-        // keep preview working without buildings.
-        if (CESIUM_TOKEN) {
-          try {
-            const tileset = await Cesium.createOsmBuildingsAsync();
-            if (cancelled) return;
-            viewer.scene.primitives.add(tileset);
-            tilesetRef.current = tileset;
-          } catch (err) {
-            console.warn('[preview-3d] OSM Buildings failed to load:', errorToMessage(err));
-          }
-        } else {
-          setBuildingsVisible(false);
+        // 5. OSM Buildings — free 3D buildings from Cesium ion (always load as fallback)
+        try {
+          const tileset = await Cesium.createOsmBuildingsAsync();
+          viewer.scene.primitives.add(tileset);
+          tilesetRef.current = tileset;
+        } catch {
+          console.warn('[preview-3d] OSM Buildings failed to load');
         }
 
         // 6. Build absolute positions: ground elevation + AGL waypoint height.
@@ -321,14 +267,12 @@ export default function Preview3DPage() {
         setMapReady(true);
 
       } catch (err) {
-        const message = errorToMessage(err);
-        console.error('[preview-3d] Initialization error:', message, err);
-        setLoadError(t('preview.loadErrorPrefix') + message);
+        console.error('[preview-3d] Initialization error:', err);
+        setLoadError(t('preview.loadErrorPrefix') + String(err));
       }
     })();
 
     return () => {
-      cancelled = true;
       // Remove camera listener before destroying the viewer to prevent
       // setHeading calls on an already-unmounted component.
       if (viewerRef.current?.camera?.changed && cameraChangedHandlerRef.current) {

@@ -369,3 +369,12 @@ Aplikace zobrazí krok za krokem:
 - [x] NPR/NPP/PR/PP přírodní rezervace na mapě s kolizní detekcí
 - [ ] Anglická lokalizace
 - [x] 3D náhled mise (CesiumJS, World Terrain, OSM Buildings)
+
+### Server review — 2026-10-30
+- Synced deployed source changes from `/home/gennady/dji-waypoint-planner` onto existing GitHub history, in a separate checkout.
+- 3D preview uses explicit OSM imagery, optional Ion terrain with ellipsoid fallback, terrain sampling, actual waypoint heights, and route bounding-sphere camera presets.
+- Optional buildings no longer block route initialization; missing layers have visible status messages.
+- Docker excludes environment files; browser-visible configuration is supplied through explicit build arguments.
+- Airspace downloader accepts process environment, `.env.local`, or `.env`, and preserves existing data on empty/incomplete responses.
+- Small-reserve downloader rejects unsupported countries and preserves existing data if a quadrant fails.
+- Confirmed Ion terrain asset 1 returns 200; buildings asset 96188 returns 404 with server configuration. Credentials are excluded from source control.

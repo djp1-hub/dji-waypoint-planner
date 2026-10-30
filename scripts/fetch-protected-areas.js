@@ -150,7 +150,7 @@ function simplifyRing(ring, tolerance = 0.001) {
   }
 
   out.push(ring[ring.length - 1]);
-  return out;
+  return out.length >= 4 ? out : ring;
 }
 
 // ── Country-specific classification ──────────────────────────────────────────

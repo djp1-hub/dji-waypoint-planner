@@ -18,6 +18,7 @@ declare global { interface Window { Cesium: any } }
 
 // Tokens read from environment variables — never hardcode here.
 const CESIUM_TOKEN = process.env.NEXT_PUBLIC_CESIUM_TOKEN ?? '';
+const ION_ENABLED = Boolean(CESIUM_TOKEN.trim());
 
 // Bump this string when upgrading CesiumJS.
 const CESIUM_VERSION = '1.115';
@@ -67,6 +68,7 @@ export default function Preview3DPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const viewerRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sphereRef = useRef<any>(null);
   const tilesetRef = useRef<any>(null);        // OSM Buildings tileset
   // Ref to camera.changed handler so it can be removed in cleanup (prevents stale setHeading calls)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,6 +78,8 @@ export default function Preview3DPage() {
   const [loading, setLoading] = useState<string>(t('preview.loadingCesium'));
   const [mapReady, setMapReady] = useState(false);
   const [buildingsVisible, setBuildingsVisible] = useState(true);
+  const [buildingsReady, setBuildingsReady] = useState(false);
+  const [warnings, setWarnings] = useState<string[]>([]);
   // heading: current camera heading in degrees (0 = north), drives the rotating compass
   const [heading, setHeading] = useState(0);
   const [missionMeta, setMissionMeta] = useState<{
@@ -91,12 +95,14 @@ export default function Preview3DPage() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let viewer: any = null;
+    let disposed = false;
 
     (async () => {
       try {
         // 1. Load Cesium from CDN via script tag
         setLoading(t('preview.loadingCesium'));
         await loadCesiumScript();
+        if (disposed) return;
         const Cesium = window.Cesium;
 
         Cesium.Ion.defaultAccessToken = CESIUM_TOKEN;
@@ -120,6 +126,7 @@ export default function Preview3DPage() {
             setLoadError(t('preview.emptyMission'));
             return;
           }
+          if (parsed.waypoints.some(wp => !Number.isFinite(wp.lat) || !Number.isFinite(wp.lng) || Math.abs(wp.lat) > 90 || Math.abs(wp.lng) > 180 || (wp.height != null && !Number.isFinite(wp.height)))) throw new Error('Invalid mission coordinates');
           wps = parsed.waypoints;
           timestamp = parsed.timestamp;
         } catch {
@@ -130,32 +137,33 @@ export default function Preview3DPage() {
         const center = centroid(wps);
         setMissionMeta({ count: wps.length, timestamp, center, avgDisplayHeight: 0 });
 
-        // 3. Fetch ground elevation from Open-Meteo for each waypoint.
-        // Cesium World Terrain renders real elevation, but positions need
-        // absolute MSL altitude = ground elevation + AGL waypoint height.
-        setLoading(t('preview.loadingTerrain'));
-        let groundElevs: number[] = wps.map(() => 0);
-        try {
-          const lats = wps.map((wp: Waypoint) => wp.lat).join(',');
-          const lngs = wps.map((wp: Waypoint) => wp.lng).join(',');
-          const elevRes = await fetch(
-            `https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lngs}`,
-          );
-          if (elevRes.ok) {
-            const elevData = await elevRes.json() as { elevation: number[] };
-            groundElevs = elevData.elevation ?? groundElevs;
+        // Start with explicit token-free imagery and ellipsoid terrain.
+        // Ion failures must never prevent the globe and route from rendering.
+        let terrainProvider = new Cesium.EllipsoidTerrainProvider();
+        if (ION_ENABLED) {
+          try {
+            terrainProvider = await Cesium.createWorldTerrainAsync();
+          } catch {
+            setWarnings(prev => [...prev, 'Terrain unavailable — flat globe']);
           }
-        } catch {
-          console.warn('[preview-3d] Elevation fetch failed, using 0');
         }
-
-        // 4. Create Cesium Viewer with World Terrain + Bing satellite imagery
-        setLoading(t('preview.init3d'));
+        if (disposed) return;
+        let groundElevs: number[] = wps.map(() => 0);
+        if (terrainProvider.availability) {
+          try {
+            const samples = await Cesium.sampleTerrainMostDetailed(terrainProvider,
+              wps.map(wp => Cesium.Cartographic.fromDegrees(wp.lng, wp.lat)));
+            groundElevs = samples.map((p: { height: number }) => Number.isFinite(p.height) ? p.height : 0);
+          } catch {
+            console.warn('[preview-3d] Terrain sampling unavailable');
+          }
+        }
+        if (disposed) return;
         viewer = new Cesium.Viewer(containerRef.current!, {
-          terrainProvider: await Cesium.createWorldTerrainAsync({
-            requestWaterMask: true,
-            requestVertexNormals: true,
-          }),
+          terrainProvider,
+          baseLayer: new Cesium.ImageryLayer(new Cesium.OpenStreetMapImageryProvider({
+            url: 'https://tile.openstreetmap.org/',
+          })),
           baseLayerPicker: false,
           geocoder: false,
           homeButton: false,
@@ -170,26 +178,32 @@ export default function Preview3DPage() {
 
         viewerRef.current = viewer;
 
+        viewer.scene.globe.show = true;
+        viewer.imageryLayers.get(0).imageryProvider.errorEvent.addEventListener(() => {
+          if (!disposed) setWarnings(prev => prev.includes('Map tiles unavailable') ? prev : [...prev, 'Map tiles unavailable']);
+        });
+
         // Style Cesium credit container — must remain visible per Cesium ToS
         const creditContainer = viewer.cesiumWidget.creditContainer as HTMLElement;
         creditContainer.style.fontSize = '10px';
         creditContainer.style.opacity = '0.6';
 
-        // 5. OSM Buildings — free 3D buildings from Cesium ion (always load as fallback)
-        try {
-          const tileset = await Cesium.createOsmBuildingsAsync();
+        // Optional buildings load in the background; the mission stays usable.
+        if (ION_ENABLED) void Cesium.createOsmBuildingsAsync().then((tileset: any) => {
+          if (disposed) { tileset.destroy(); return; }
           viewer.scene.primitives.add(tileset);
           tilesetRef.current = tileset;
-        } catch {
-          console.warn('[preview-3d] OSM Buildings failed to load');
-        }
+          setBuildingsReady(true);
+        }).catch(() => {
+          if (!disposed) setWarnings(prev => [...prev, '3D buildings unavailable']);
+        });
 
         // 6. Build absolute positions: ground elevation + AGL waypoint height.
         // For visualization only — KMZ export uses the original heights unchanged.
-        // Minimum AGL is raised to 80 m so the route flies clearly above buildings.
-        const avgElev = groundElevs.reduce((s, e) => s + e, 0) / groundElevs.length;
+        // Preserve the mission heights in the preview.
+
         const positions = wps.map((wp: Waypoint, i: number) => {
-          const aglHeight = Math.max(wp.height ?? 50, 80);
+          const aglHeight = (wp.height ?? 50);
           return Cesium.Cartesian3.fromDegrees(
             wp.lng,
             wp.lat,
@@ -197,7 +211,7 @@ export default function Preview3DPage() {
           );
         });
         const avgDisplayHeight = Math.round(
-          wps.reduce((s, wp) => s + Math.max(wp.height ?? 50, 80), 0) / wps.length,
+          wps.reduce((s, wp) => s + (wp.height ?? 50), 0) / wps.length,
         );
         // Update meta with the computed display height
         setMissionMeta(prev => prev ? { ...prev, avgDisplayHeight } : prev);
@@ -240,19 +254,11 @@ export default function Preview3DPage() {
           });
         });
 
-        // 9. Initial camera — 45° oblique view over the mission centroid
-        viewer.camera.setView({
-          destination: Cesium.Cartesian3.fromDegrees(
-            center.lng,
-            center.lat - 0.005,
-            avgElev + 500,
-          ),
-          orientation: {
-            heading: Cesium.Math.toRadians(0),
-            pitch: Cesium.Math.toRadians(-45),
-            roll: 0,
-          },
-        });
+        // Frame the entire route in world coordinates, including terrain height.
+        sphereRef.current = Cesium.BoundingSphere.fromPoints(positions);
+        viewer.camera.viewBoundingSphere(sphereRef.current,
+          new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(-45), Math.max(400, sphereRef.current.radius * 3)));
+        viewer.camera.lookAtTransform(Cesium.Matrix4.IDENTITY);
 
         // Rotating compass: update heading state whenever camera orientation changes.
         // heading = 0 means camera points north; rotating right increases heading.
@@ -267,12 +273,14 @@ export default function Preview3DPage() {
         setMapReady(true);
 
       } catch (err) {
-        console.error('[preview-3d] Initialization error:', err);
-        setLoadError(t('preview.loadErrorPrefix') + String(err));
+        if (disposed) return;
+        console.error('[preview-3d] Initialization failed');
+        setLoadError(t('preview.loadFailed'));
       }
     })();
 
     return () => {
+      disposed = true;
       // Remove camera listener before destroying the viewer to prevent
       // setHeading calls on an already-unmounted component.
       if (viewerRef.current?.camera?.changed && cameraChangedHandlerRef.current) {
@@ -300,61 +308,17 @@ export default function Preview3DPage() {
     return window.Cesium;
   }
 
-  function handleResetView() {
-    if (!viewerRef.current || !missionMeta) return;
+  function frameMission(pitch: number) {
+    if (!viewerRef.current || !sphereRef.current) return;
     const Cesium = getCesium();
-    viewerRef.current.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(
-        missionMeta.center.lng,
-        missionMeta.center.lat - 0.005,
-        500,
-      ),
-      orientation: {
-        heading: Cesium.Math.toRadians(0),
-        pitch: Cesium.Math.toRadians(-45),
-        roll: 0,
-      },
-      duration: 1.5,
+    viewerRef.current.camera.flyToBoundingSphere(sphereRef.current, {
+      offset: new Cesium.HeadingPitchRange(0, Cesium.Math.toRadians(pitch), Math.max(400, sphereRef.current.radius * 3)),
+      duration: 1,
     });
   }
-
-  function handleSideView() {
-    // pitch -30° = low angle, shows building facades and horizon
-    if (!viewerRef.current || !missionMeta) return;
-    const Cesium = getCesium();
-    viewerRef.current.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(
-        missionMeta.center.lng,
-        missionMeta.center.lat - 0.008,
-        300,
-      ),
-      orientation: {
-        heading: Cesium.Math.toRadians(0),
-        pitch: Cesium.Math.toRadians(-30),
-        roll: 0,
-      },
-      duration: 1.0,
-    });
-  }
-
-  function handleBirdView() {
-    // pitch -90° = exactly overhead — true bird's eye view
-    if (!viewerRef.current || !missionMeta) return;
-    const Cesium = getCesium();
-    viewerRef.current.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(
-        missionMeta.center.lng,
-        missionMeta.center.lat,
-        800,
-      ),
-      orientation: {
-        heading: Cesium.Math.toRadians(0),
-        pitch: Cesium.Math.toRadians(-90),
-        roll: 0,
-      },
-      duration: 1.0,
-    });
-  }
+  function handleResetView() { frameMission(-45); }
+  function handleSideView() { frameMission(-30); }
+  function handleBirdView() { frameMission(-90); }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -391,6 +355,8 @@ export default function Preview3DPage() {
           <p style={{ color: '#9ca3af', fontSize: 14 }}>{loading}</p>
         </div>
       )}
+
+      {warnings.length > 0 && <div role="status" style={{ position: 'absolute', bottom: 60, left: 16, zIndex: 20, color: '#fbbf24', background: '#1a1d27', padding: 8, fontSize: 12 }}>{warnings.join(' · ')}</div>}
 
       {/* ── Top-left controls ── */}
       <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
@@ -444,6 +410,7 @@ export default function Preview3DPage() {
         </div>
         <div className="flex gap-1">
           <button
+            disabled={!buildingsReady}
             onClick={handleToggleBuildings}
             className={`px-3 py-1.5 backdrop-blur border text-xs rounded transition-colors ${
               buildingsVisible

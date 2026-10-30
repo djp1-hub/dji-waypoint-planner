@@ -136,3 +136,14 @@
 ---
 *Aktualizuj tento soubor při každé session kdy se
 implementuje nová funkce nebo vznikne nový nápad.*
+
+### ✅ 2026-10-30 server review
+- Preserve GitHub history while importing deployed source fixes.
+- Fix 3D route framing, terrain fallback and independent imagery.
+- Verify camera presets with real terrain and forced Ion failure.
+
+### Remaining after server review
+- Restore Ion access to OSM Buildings (asset 96188).
+- Replace OSM boundary stitching with complete multipolygon/hole handling; bbox downloads can include neighbouring countries.
+- Add a Serbia-specific small-reserve classification; current NPR/NPP/PR/PP script supports CZ only.
+- Review dependency audit findings separately before dependency upgrades.

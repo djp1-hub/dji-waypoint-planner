@@ -13,7 +13,10 @@ RUN npm ci
 # Копируем исходный код
 COPY . .
 
-# Сборка проекта
+# Browser-visible configuration is supplied explicitly at build time.
+ARG NEXT_PUBLIC_CESIUM_TOKEN
+ARG NEXT_PUBLIC_MAPY_API_KEY
+ARG NEXT_PUBLIC_OPENAIP_API_KEY
 RUN npm run build
 
 # Продакшн-образ

@@ -11,12 +11,7 @@ export default function HelpPage() {
     {
       title: t('help.photo'),
       body:
-        'Use Photo mode for waypoint missions, polygon/grid mapping, orbit flights and facade scans. For mapping, verify altitude, speed, overlap and camera pitch before exporting KMZ.',
-    },
-    {
-      title: t('help.film'),
-      body:
-        'Use Film mode for cinematic presets such as Dronie, Reveal, Top-down, Crane Up, Hyperlapse, Arc Shot, Boomerang, Rocket and POI Sequence.',
+        'Plan waypoint missions, polygon mapping and facade scans. For polygon mapping, verify altitude, speed, overlap, interval and camera pitch before exporting KMZ.',
     },
     {
       title: t('help.airspace'),

@@ -22,8 +22,11 @@ const MapView = dynamic(() => import('@/components/Map'), { ssr: false });
 // Sidebar uses useLanguage hook which requires LanguageProvider context — delay until mounted
 const Sidebar = dynamic(() => import('@/components/Sidebar'), { ssr: false });
 
-/** Shot types available in film mode */
-export type FilmType = 'dronie' | 'reveal' | 'topdown' | 'craneup' | 'hyperlapse' | 'arcshot' | 'boomerang' | 'rocket' | 'poisequence';
+const AVAILABLE_MISSION_TYPES = new Set<MissionType>(['waypoints', 'polygonGrid', 'facade']);
+
+function availableMissionType(type: MissionType): MissionType {
+  return AVAILABLE_MISSION_TYPES.has(type) ? type : 'waypoints';
+}
 
 const REGION_DEFAULT_CENTER: Record<DataRegion, { lat: number; lng: number; zoom: number }> = {
   cz: { lat: 50.08, lng: 14.42, zoom: 12 },      // Prague
@@ -123,10 +126,6 @@ export default function HomePage() {
       .catch((err) => console.warn('[collisionDetection] Check failed:', err));
   }, [waypoints, dataRegion]);
 
-  // ── App mode: photo workflow vs. cinematic film shots ─────────
-  const [appMode, setAppMode] = useState<'photo' | 'film'>('photo');
-  const [filmType, setFilmType] = useState<FilmType>('dronie');
-
   // ── Toast notification (used for share URL feedback) ──────────
   const [toast, setToast] = useState<string | null>(null);
   // Ref for the auto-dismiss timer — allows cleanup on unmount and prevents stacking
@@ -145,7 +144,7 @@ export default function HomePage() {
   }, []);
 
   // ── Map state ────────────────────────────────────────────────
-  const [mapCenter, setMapCenter] = useState({
+  const [, setMapCenter] = useState({
     lat: REGION_DEFAULT_CENTER[DEFAULT_DATA_REGION].lat,
     lng: REGION_DEFAULT_CENTER[DEFAULT_DATA_REGION].lng,
   });
@@ -195,12 +194,10 @@ export default function HomePage() {
     const data = decodeMission(encoded);
     if (data) {
       setWaypoints(data.waypoints);
-      setMissionType(data.missionType);
-      setAppMode(data.missionType === 'film' ? 'film' : 'photo');
+      setMissionType(availableMissionType(data.missionType));
     }
     // Remove the ?mission= param so the URL stays clean
     window.history.replaceState({}, '', window.location.pathname);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Load mission from /missions page — runs once on mount ───────
@@ -214,9 +211,7 @@ export default function HomePage() {
       const mission: Mission = JSON.parse(raw);
       if (!mission?.waypoints?.length) return;
       setWaypoints(mission.waypoints);
-      const isFilm = mission.type === 'film';
-      setMissionType(isFilm ? 'waypoints' : mission.type);
-      setAppMode(isFilm ? 'film' : 'photo');
+      setMissionType(availableMissionType(mission.type));
       setTerrainActive(false);
       setOriginalWaypoints(null);
       // Fly to centroid of loaded waypoints
@@ -226,7 +221,6 @@ export default function HomePage() {
     } catch {
       // Ignore corrupted sessionStorage data
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Share mission as URL ──────────────────────────────────────
@@ -254,11 +248,9 @@ function copyTextFallback(text: string): boolean {
 }
 
 const handleShareMission = useCallback(async () => {
-  const shareMissionType: MissionType = appMode === 'film' ? 'film' : missionType;
-
   const encoded = encodeMission({
     waypoints,
-    missionType: shareMissionType,
+    missionType,
   });
 
   const url = `${window.location.origin}?mission=${encoded}`;
@@ -288,7 +280,7 @@ const handleShareMission = useCallback(async () => {
 
     window.prompt(t('share.prompt'), url);
   }
-}, [waypoints, missionType, appMode, showToast, t]);
+}, [waypoints, missionType, showToast, t]);
 
   // ── KMZ import ───────────────────────────────────────────────
 
@@ -302,7 +294,6 @@ const handleShareMission = useCallback(async () => {
 
       setWaypoints(imported);
       setMissionType('waypoints');
-      setAppMode('photo');
       setTerrainActive(false);
       setOriginalWaypoints(null);
 
@@ -320,17 +311,9 @@ const handleShareMission = useCallback(async () => {
     e.target.value = '';
   }, [showToast, t]);
 
-  // ── Grid state ───────────────────────────────────────────────
-  const [gridCorners, setGridCorners] = useState<{ sw: [number, number]; ne: [number, number] } | null>(null);
-  const [gridDrawStep, setGridDrawStep] = useState<'idle' | 'sw' | 'ne'>('idle');
-  // Temporary SW corner while waiting for NE click
-  const [pendingSw, setPendingSw] = useState<[number, number] | null>(null);
+  // ── Polygon state ────────────────────────────────────────────
   const [polygonPoints, setPolygonPoints] = useState<{ lat: number; lng: number }[]>([]);
   const [polygonDrawActive, setPolygonDrawActive] = useState(false);
-
-  // ── Orbit state ──────────────────────────────────────────────
-  const [poi, setPoi] = useState<{ lat: number; lng: number } | null>(null);
-  const [isSelectingPoi, setIsSelectingPoi] = useState(false);
 
   // ── Facade state (single side) ───────────────────────────────
   type FacadePoints = { a: { lat: number; lng: number }; b: { lat: number; lng: number } };
@@ -341,135 +324,11 @@ const handleShareMission = useCallback(async () => {
   // 'single' = one facade side; '360' = full building (corners added via map clicks like waypoints)
   const [facadeMode, setFacadeMode] = useState<'single' | '360'>('single');
 
-  // ── Film state — one point-selector per shot type ─────────────
-  // Dronie
-  const [dronieStart, setDronieStart] = useState<{ lat: number; lng: number } | null>(null);
-  const [isSelectingDronieStart, setIsSelectingDronieStart] = useState(false);
-  // Reveal
-  const [revealPoi, setRevealPoi] = useState<{ lat: number; lng: number } | null>(null);
-  const [revealStart, setRevealStart] = useState<{ lat: number; lng: number } | null>(null);
-  const [isSelectingRevealPoi, setIsSelectingRevealPoi] = useState(false);
-  const [isSelectingRevealStart, setIsSelectingRevealStart] = useState(false);
-  // Top-down
-  const [topDownStart, setTopDownStart] = useState<{ lat: number; lng: number } | null>(null);
-  const [topDownEnd, setTopDownEnd] = useState<{ lat: number; lng: number } | null>(null);
-  const [isSelectingTopDownStart, setIsSelectingTopDownStart] = useState(false);
-  const [isSelectingTopDownEnd, setIsSelectingTopDownEnd] = useState(false);
-  // Crane Up
-  const [craneUpPos, setCraneUpPos] = useState<{ lat: number; lng: number } | null>(null);
-  const [isSelectingCraneUpPos, setIsSelectingCraneUpPos] = useState(false);
-  // Hyperlapse
-  const [hyperlapseStart, setHyperlapseStart] = useState<{ lat: number; lng: number } | null>(null);
-  const [hyperlapseEnd, setHyperlapseEnd] = useState<{ lat: number; lng: number } | null>(null);
-  const [hyperlapseSelectStep, setHyperlapseSelectStep] = useState<'idle' | 'start' | 'end'>('idle');
-  // Arc Shot
-  const [arcShotPoi, setArcShotPoi] = useState<{ lat: number; lng: number } | null>(null);
-  const [isSelectingArcShotPoi, setIsSelectingArcShotPoi] = useState(false);
-  // Boomerang
-  const [boomerangStart, setBoomerangStart] = useState<{ lat: number; lng: number } | null>(null);
-  const [boomerangEnd, setBoomerangEnd] = useState<{ lat: number; lng: number } | null>(null);
-  const [boomerangSelectStep, setBoomerangSelectStep] = useState<'idle' | 'start' | 'end'>('idle');
-  // Rocket
-  const [rocketPos, setRocketPos] = useState<{ lat: number; lng: number } | null>(null);
-  const [isSelectingRocket, setIsSelectingRocket] = useState(false);
-  // POI Sequence
-  const [poiSeqPoi, setPoiSeqPoi] = useState<{ lat: number; lng: number } | null>(null);
-  const [isSelectingPoiSeq, setIsSelectingPoiSeq] = useState(false);
 
   // ── Map interaction ──────────────────────────────────────────
 
-  /** Returns true when any film point selector is active */
-  const isAnyFilmSelecting =
-    isSelectingDronieStart ||
-    isSelectingRevealPoi ||
-    isSelectingRevealStart ||
-    isSelectingTopDownStart ||
-    isSelectingTopDownEnd ||
-    isSelectingCraneUpPos ||
-    hyperlapseSelectStep !== 'idle' ||
-    isSelectingArcShotPoi ||
-    boomerangSelectStep !== 'idle' ||
-    isSelectingRocket ||
-    isSelectingPoiSeq;
-
   /** Single handler for all map clicks — behavior depends on current mode */
   const handleMapClick = useCallback((lat: number, lng: number) => {
-    // ── Film mode point selectors ────────────────────────────
-    if (isSelectingDronieStart) {
-      setDronieStart({ lat, lng });
-      setIsSelectingDronieStart(false);
-      return;
-    }
-    if (isSelectingRevealPoi) {
-      setRevealPoi({ lat, lng });
-      setIsSelectingRevealPoi(false);
-      return;
-    }
-    if (isSelectingRevealStart) {
-      setRevealStart({ lat, lng });
-      setIsSelectingRevealStart(false);
-      return;
-    }
-    if (isSelectingTopDownStart) {
-      setTopDownStart({ lat, lng });
-      setIsSelectingTopDownStart(false);
-      return;
-    }
-    if (isSelectingTopDownEnd) {
-      setTopDownEnd({ lat, lng });
-      setIsSelectingTopDownEnd(false);
-      return;
-    }
-    if (isSelectingCraneUpPos) {
-      setCraneUpPos({ lat, lng });
-      setIsSelectingCraneUpPos(false);
-      return;
-    }
-    if (hyperlapseSelectStep === 'start') {
-      setHyperlapseStart({ lat, lng });
-      setHyperlapseSelectStep('idle');
-      return;
-    }
-    if (hyperlapseSelectStep === 'end') {
-      setHyperlapseEnd({ lat, lng });
-      setHyperlapseSelectStep('idle');
-      return;
-    }
-    if (isSelectingArcShotPoi) {
-      setArcShotPoi({ lat, lng });
-      setIsSelectingArcShotPoi(false);
-      return;
-    }
-    if (boomerangSelectStep === 'start') {
-      setBoomerangStart({ lat, lng });
-      setBoomerangSelectStep('idle');
-      return;
-    }
-    if (boomerangSelectStep === 'end') {
-      setBoomerangEnd({ lat, lng });
-      setBoomerangSelectStep('idle');
-      return;
-    }
-    if (isSelectingRocket) {
-      setRocketPos({ lat, lng });
-      setIsSelectingRocket(false);
-      return;
-    }
-    if (isSelectingPoiSeq) {
-      setPoiSeqPoi({ lat, lng });
-      setIsSelectingPoiSeq(false);
-      return;
-    }
-
-    // ── Photo mode ───────────────────────────────────────────
-
-    // POI select mode (orbit)
-    if (isSelectingPoi) {
-      setPoi({ lat, lng });
-      setIsSelectingPoi(false);
-      return;
-    }
-
     // Facade point selection (single side)
     if (facadeDrawStep === 'a') {
       setPendingFacadeA({ lat, lng });
@@ -487,19 +346,6 @@ const handleShareMission = useCallback(async () => {
       setPolygonPoints((prev) => [...prev, { lat, lng }]);
       return;
     }
-    // Grid corner selection
-    if (gridDrawStep === 'sw') {
-      setPendingSw([lat, lng]);
-      setGridDrawStep('ne');
-      return;
-    }
-    if (gridDrawStep === 'ne' && pendingSw) {
-      setGridCorners({ sw: pendingSw, ne: [lat, lng] });
-      setPendingSw(null);
-      setGridDrawStep('idle');
-      return;
-    }
-
     // Default: add waypoint in waypoints mode, or in facade 360° mode (building corners)
     if (missionType === 'waypoints' || (missionType === 'facade' && facadeMode === '360')) {
       setWaypoints((prev) => [
@@ -508,13 +354,7 @@ const handleShareMission = useCallback(async () => {
       ]);
     }
   }, [
-    isSelectingDronieStart, isSelectingRevealPoi, isSelectingRevealStart,
-    isSelectingTopDownStart, isSelectingTopDownEnd, isSelectingCraneUpPos,
-    hyperlapseSelectStep, isSelectingArcShotPoi,
-    boomerangSelectStep, isSelectingRocket, isSelectingPoiSeq,
-    isSelectingPoi, facadeDrawStep, pendingFacadeA, gridDrawStep, pendingSw,
-    polygonDrawActive,
-    missionType, facadeMode,
+    facadeDrawStep, pendingFacadeA, polygonDrawActive, missionType, facadeMode,
   ]);
 
   /** Update waypoint position after drag */
@@ -537,7 +377,7 @@ const handleShareMission = useCallback(async () => {
     setOriginalWaypoints(null);
   }, []);
 
-  /** Replace all waypoints with a newly generated set (spiral/grid/orbit/film) */
+  /** Replace all waypoints with a newly generated mission. */
   const handleSetWaypoints = useCallback((wps: Waypoint[]) => {
     setWaypoints(wps);
     // New mission always starts without terrain following applied
@@ -551,29 +391,8 @@ const handleShareMission = useCallback(async () => {
     setWaypoints([]);
     setTerrainActive(false);
     setOriginalWaypoints(null);
-    setGridDrawStep('idle');
-    setPendingSw(null);
-    setIsSelectingPoi(false);
     setFacadeDrawStep('idle');
     setPendingFacadeA(null);
-  }, []);
-
-  /** Switch between photo and film app modes — clears waypoints and film selections */
-  const handleAppModeChange = useCallback((mode: 'photo' | 'film') => {
-    setAppMode(mode);
-    setWaypoints([]);
-    // Reset all film selectors
-    setIsSelectingDronieStart(false);
-    setIsSelectingRevealPoi(false);
-    setIsSelectingRevealStart(false);
-    setIsSelectingTopDownStart(false);
-    setIsSelectingTopDownEnd(false);
-    setIsSelectingCraneUpPos(false);
-    setHyperlapseSelectStep('idle');
-    setIsSelectingArcShotPoi(false);
-    setBoomerangSelectStep('idle');
-    setIsSelectingRocket(false);
-    setIsSelectingPoiSeq(false);
   }, []);
 
   /** Switch between single-side and 360° facade modes — clears waypoints */
@@ -608,21 +427,17 @@ const handleShareMission = useCallback(async () => {
   }, []);
 
   const handleSaveConfirm = useCallback((name: string) => {
-    // Film missions are saved with type 'film'
-    const effectiveMissionType: MissionType = appMode === 'film' ? 'film' : missionType;
     const mission: Mission = {
       id: `mission-${Date.now()}`,
       name,
-      type: effectiveMissionType,
+      type: missionType,
       createdAt: new Date().toISOString(),
       waypoints: [...waypoints],
-      // Include POI for orbit missions so KMZ export uses towardPOI heading
-      ...(missionType === 'orbit' && poi ? { poi } : {}),
     };
     saveMission(mission);
     setSaveDialogOpen(false);
     router.push('/missions');
-  }, [waypoints, missionType, appMode, poi, router]);
+  }, [waypoints, missionType, router]);
 
   const handleExportLitchi = useCallback(() => {
     if (waypoints.length === 0) return;
@@ -646,14 +461,12 @@ const handleShareMission = useCallback(async () => {
     }
     setIsExporting(true);
     try {
-      const effectiveMissionType: MissionType = appMode === 'film' ? 'film' : missionType;
       const mission: Mission = {
         id: 'export',
         name: 'mission',
-        type: effectiveMissionType,
+        type: missionType,
         createdAt: new Date().toISOString(),
         waypoints,
-        ...(missionType === 'orbit' && poi ? { poi } : {}),
       };
       await exportKMZ(mission, activeDrone?.name);
     } catch (error) {
@@ -662,25 +475,15 @@ const handleShareMission = useCallback(async () => {
     } finally {
       setIsExporting(false);
     }
-  }, [waypoints, missionType, appMode, poi, collisions, t]);
+  }, [waypoints, missionType, collisions, t, activeDrone?.name]);
 
   // ── Derived map props ────────────────────────────────────────
 
   // Show crosshair cursor when the user is placing a point on the map
-  const crosshairCursor =
-    gridDrawStep !== 'idle' ||
-    polygonDrawActive ||
-    facadeDrawStep !== 'idle' ||
-    isSelectingPoi ||
-    isAnyFilmSelecting;
+  const crosshairCursor = polygonDrawActive || facadeDrawStep !== 'idle';
 
   // Markers are draggable in waypoints mode and in facade 360° mode (to fine-tune corners)
   const draggableMarkers = missionType === 'waypoints' || (missionType === 'facade' && facadeMode === '360');
-
-  // Show grid rectangle when both corners are selected
-  const gridRect: [[number, number], [number, number]] | null = gridCorners
-    ? [gridCorners.sw, gridCorners.ne]
-    : null;
 
   // Show facade line when both points are selected
   const facadeLine: [[number, number], [number, number]] | null = facadePoints
@@ -711,18 +514,10 @@ const handleShareMission = useCallback(async () => {
         missionType={missionType}
         onMissionTypeChange={handleMissionTypeChange}
         onFlyTo={handleFlyTo}
-        appMode={appMode}
-        onAppModeChange={handleAppModeChange}
-        filmType={filmType}
-        onFilmTypeChange={setFilmType}
         onUpdateWaypoint={handleUpdateWaypoint}
         onDeleteWaypoint={handleDeleteWaypoint}
         onClearAll={handleClearAll}
         onSetWaypoints={handleSetWaypoints}
-        mapCenter={mapCenter}
-        gridCorners={gridCorners}
-        gridDrawStep={gridDrawStep}
-        onStartDrawGrid={() => setGridDrawStep('sw')}
         polygonPoints={polygonPoints}
         polygonDrawActive={polygonDrawActive}
         onStartDrawPolygon={() => {
@@ -734,58 +529,11 @@ const handleShareMission = useCallback(async () => {
           setPolygonPoints([]);
           setPolygonDrawActive(false);
         }}
-        poi={poi}
-        isSelectingPoi={isSelectingPoi}
-        onSelectPoi={() => setIsSelectingPoi(true)}
-        onSetPoi={setPoi}
         facadePoints={facadePoints}
         facadeDrawStep={facadeDrawStep}
         onStartDrawFacade={() => setFacadeDrawStep('a')}
         facadeMode={facadeMode}
         onFacadeModeChange={handleFacadeModeChange}
-        // Film props
-        dronieStart={dronieStart}
-        isSelectingDronieStart={isSelectingDronieStart}
-        onSelectDronieStart={() => setIsSelectingDronieStart(true)}
-        revealPoi={revealPoi}
-        revealStart={revealStart}
-        isSelectingRevealPoi={isSelectingRevealPoi}
-        isSelectingRevealStart={isSelectingRevealStart}
-        onSelectRevealPoi={() => setIsSelectingRevealPoi(true)}
-        onSelectRevealStart={() => setIsSelectingRevealStart(true)}
-        topDownStart={topDownStart}
-        topDownEnd={topDownEnd}
-        isSelectingTopDownStart={isSelectingTopDownStart}
-        isSelectingTopDownEnd={isSelectingTopDownEnd}
-        onSelectTopDownStart={() => setIsSelectingTopDownStart(true)}
-        onSelectTopDownEnd={() => setIsSelectingTopDownEnd(true)}
-        craneUpPos={craneUpPos}
-        isSelectingCraneUpPos={isSelectingCraneUpPos}
-        onSelectCraneUpPos={() => setIsSelectingCraneUpPos(true)}
-        // Hyperlapse props
-        hyperlapseStart={hyperlapseStart}
-        hyperlapseEnd={hyperlapseEnd}
-        hyperlapseSelectStep={hyperlapseSelectStep}
-        onSelectHyperlapseStart={() => setHyperlapseSelectStep('start')}
-        onSelectHyperlapseEnd={() => setHyperlapseSelectStep('end')}
-        // Arc Shot props
-        arcShotPoi={arcShotPoi}
-        isSelectingArcShotPoi={isSelectingArcShotPoi}
-        onSelectArcShotPoi={() => setIsSelectingArcShotPoi(true)}
-        // Boomerang props
-        boomerangStart={boomerangStart}
-        boomerangEnd={boomerangEnd}
-        boomerangSelectStep={boomerangSelectStep}
-        onSelectBoomerangStart={() => setBoomerangSelectStep('start')}
-        onSelectBoomerangEnd={() => setBoomerangSelectStep('end')}
-        // Rocket props
-        rocketPos={rocketPos}
-        isSelectingRocket={isSelectingRocket}
-        onSelectRocket={() => setIsSelectingRocket(true)}
-        // POI Sequence props
-        poiSeqPoi={poiSeqPoi}
-        isSelectingPoiSeq={isSelectingPoiSeq}
-        onSelectPoiSeq={() => setIsSelectingPoiSeq(true)}
         terrainActive={terrainActive}
         onTerrainApply={handleTerrainApply}
         onTerrainReset={handleTerrainReset}
@@ -830,7 +578,7 @@ const handleShareMission = useCallback(async () => {
           onMapClick={handleMapClick}
           onUpdateWaypoint={handleUpdateWaypointPosition}
           onCenterChange={(lat, lng) => setMapCenter({ lat, lng })}
-          gridRect={gridRect}
+          gridRect={null}
           polygonPoints={polygonPoints}
           polygonDrawActive={polygonDrawActive}
           facadeLine={facadeLine}

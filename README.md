@@ -44,6 +44,13 @@ values are visible in the browser bundle: use only appropriately restricted
 client credentials. Rebuild when changing them. Without a Cesium token, preview
 uses OSM imagery and an ellipsoid globe; terrain and buildings are optional.
 
+The 3D preview first requests the global Cesium OSM Buildings tileset. If the
+configured ion token cannot access that asset, the app loads real OpenStreetMap
+building footprints near the mission through `/api/osm-buildings` and extrudes
+them from `height` or `building:levels`. This fallback is limited to a small
+area around the mission. Imagery starts with OpenStreetMap and switches to
+ArcGIS World Imagery after repeated tile failures.
+
 Download zones with `node scripts/fetch-airspaces.js cz` (or `rs`) and
 `node scripts/fetch-protected-areas.js cz` (or `rs`).
 `node scripts/fetch-small-reserves.js cz` supports Czech categories only.

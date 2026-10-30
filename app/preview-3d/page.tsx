@@ -6,7 +6,13 @@
 // Cesium is loaded via CDN <script> tag (not npm dynamic import) to avoid
 // Next.js bundling issues with the large CesiumJS package on Vercel.
 
-import { useEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import { Waypoint } from '@/lib/types';
 import { useTranslation } from '@/lib/languageContext';
 
@@ -24,6 +30,15 @@ const ION_ENABLED = Boolean(CESIUM_TOKEN.trim());
 const CESIUM_VERSION = '1.115';
 const CESIUM_CDN =
   `https://cesium.com/downloads/cesiumjs/releases/${CESIUM_VERSION}/Build/Cesium`;
+const MAX_BUILDING_SPAN_DEGREES = 0.055;
+
+interface OsmBuilding {
+  id: string;
+  name: string | null;
+  polygon: [number, number][];
+  height: number;
+  minHeight: number;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -32,6 +47,35 @@ function centroid(waypoints: Waypoint[]): { lng: number; lat: number } {
   const lng = waypoints.reduce((s, wp) => s + wp.lng, 0) / waypoints.length;
   const lat = waypoints.reduce((s, wp) => s + wp.lat, 0) / waypoints.length;
   return { lng, lat };
+}
+
+function buildingBounds(waypoints: Waypoint[]): string {
+  const lats = waypoints.map(wp => wp.lat);
+  const lngs = waypoints.map(wp => wp.lng);
+  const center = centroid(waypoints);
+  const padding = 0.0025;
+  let south = Math.min(...lats) - padding;
+  let north = Math.max(...lats) + padding;
+  let west = Math.min(...lngs) - padding;
+  let east = Math.max(...lngs) + padding;
+
+  if (north - south > MAX_BUILDING_SPAN_DEGREES) {
+    south = center.lat - MAX_BUILDING_SPAN_DEGREES / 2;
+    north = center.lat + MAX_BUILDING_SPAN_DEGREES / 2;
+  }
+  if (east - west > MAX_BUILDING_SPAN_DEGREES) {
+    west = center.lng - MAX_BUILDING_SPAN_DEGREES / 2;
+    east = center.lng + MAX_BUILDING_SPAN_DEGREES / 2;
+  }
+
+  return [south, west, north, east].map(value => value.toFixed(6)).join(',');
+}
+
+function removeWarning(
+  setter: Dispatch<SetStateAction<string[]>>,
+  warning: string,
+) {
+  setter(previous => previous.filter(item => item !== warning));
 }
 
 /**
@@ -70,7 +114,7 @@ export default function Preview3DPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sphereRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tilesetRef = useRef<any>(null);        // OSM Buildings tileset
+  const buildingsLayerRef = useRef<any>(null); // Ion tileset or local OSM data source
   // Ref to camera.changed handler so it can be removed in cleanup (prevents stale setHeading calls)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cameraChangedHandlerRef = useRef<any>(null);
@@ -80,6 +124,8 @@ export default function Preview3DPage() {
   const [mapReady, setMapReady] = useState(false);
   const [buildingsVisible, setBuildingsVisible] = useState(true);
   const [buildingsReady, setBuildingsReady] = useState(false);
+  const [buildingsLoading, setBuildingsLoading] = useState(true);
+  const [buildingsSource, setBuildingsSource] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   // heading: current camera heading in degrees (0 = north), drives the rotating compass
   const [heading, setHeading] = useState(0);
@@ -180,8 +226,24 @@ export default function Preview3DPage() {
         viewerRef.current = viewer;
 
         viewer.scene.globe.show = true;
-        viewer.imageryLayers.get(0).imageryProvider.errorEvent.addEventListener(() => {
-          if (!disposed) setWarnings(prev => prev.includes('Map tiles unavailable') ? prev : [...prev, 'Map tiles unavailable']);
+        const osmLayer = viewer.imageryLayers.get(0);
+        let imageryErrorCount = 0;
+        let imageryFallbackStarted = false;
+        osmLayer.imageryProvider.errorEvent.addEventListener(() => {
+          imageryErrorCount += 1;
+          if (disposed || imageryErrorCount < 3 || imageryFallbackStarted) return;
+          imageryFallbackStarted = true;
+          void Cesium.ArcGisMapServerImageryProvider.fromUrl(
+            'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer',
+          ).then((provider: unknown) => {
+            if (disposed) return;
+            const fallbackLayer = new Cesium.ImageryLayer(provider);
+            viewer.imageryLayers.add(fallbackLayer, 0);
+            viewer.imageryLayers.remove(osmLayer, true);
+            removeWarning(setWarnings, 'Map tiles unavailable');
+          }).catch(() => {
+            if (!disposed) setWarnings(prev => prev.includes('Map tiles unavailable') ? prev : [...prev, 'Map tiles unavailable']);
+          });
         });
 
         // Style Cesium credit container — must remain visible per Cesium ToS
@@ -189,16 +251,66 @@ export default function Preview3DPage() {
         creditContainer.style.fontSize = '10px';
         creditContainer.style.opacity = '0.6';
 
-        // Optional buildings load in the background; the mission stays usable.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (ION_ENABLED) void Cesium.createOsmBuildingsAsync().then((tileset: any) => {
-          if (disposed) { tileset.destroy(); return; }
-          viewer.scene.primitives.add(tileset);
-          tilesetRef.current = tileset;
-          setBuildingsReady(true);
-        }).catch(() => {
-          if (!disposed) setWarnings(prev => [...prev, '3D buildings unavailable']);
-        });
+        // Prefer the global Cesium ion tileset. If the token has no entitlement,
+        // extrude real OSM building footprints around the mission instead.
+        const loadLocalOsmBuildings = async () => {
+          const response = await fetch(`/api/osm-buildings?bbox=${encodeURIComponent(buildingBounds(wps))}`);
+          if (!response.ok) throw new Error('OSM buildings request failed');
+          const data = await response.json() as { buildings: OsmBuilding[] };
+          if (!data.buildings.length) throw new Error('No OSM buildings in mission area');
+
+          const dataSource = new Cesium.CustomDataSource('osm-mission-buildings');
+          for (const building of data.buildings) {
+            dataSource.entities.add({
+              id: building.id,
+              name: building.name ?? undefined,
+              polygon: {
+                hierarchy: Cesium.Cartesian3.fromDegreesArray(building.polygon.flat()),
+                height: building.minHeight,
+                heightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+                extrudedHeight: building.height,
+                extrudedHeightReference: Cesium.HeightReference.RELATIVE_TO_GROUND,
+                material: Cesium.Color.fromCssColorString('#d4d0c8').withAlpha(0.92),
+                outline: true,
+                outlineColor: Cesium.Color.fromCssColorString('#77736c'),
+                closeTop: true,
+                closeBottom: true,
+              },
+            });
+          }
+          await viewer.dataSources.add(dataSource);
+          return dataSource;
+        };
+
+        void (async () => {
+          try {
+            if (ION_ENABLED) {
+              try {
+                const ionTileset = await Cesium.createOsmBuildingsAsync();
+                if (disposed) { ionTileset.destroy(); return; }
+                viewer.scene.primitives.add(ionTileset);
+                buildingsLayerRef.current = ionTileset;
+                setBuildingsSource('Cesium OSM Buildings');
+              } catch {
+                const localBuildings = await loadLocalOsmBuildings();
+                if (disposed) return;
+                buildingsLayerRef.current = localBuildings;
+                setBuildingsSource('OpenStreetMap');
+              }
+            } else {
+              const localBuildings = await loadLocalOsmBuildings();
+              if (disposed) return;
+              buildingsLayerRef.current = localBuildings;
+              setBuildingsSource('OpenStreetMap');
+            }
+            removeWarning(setWarnings, '3D buildings unavailable');
+            setBuildingsReady(true);
+          } catch {
+            if (!disposed) setWarnings(prev => prev.includes('3D buildings unavailable') ? prev : [...prev, '3D buildings unavailable']);
+          } finally {
+            if (!disposed) setBuildingsLoading(false);
+          }
+        })();
 
         // 6. Build absolute positions: ground elevation + AGL waypoint height.
         // For visualization only — KMZ export uses the original heights unchanged.
@@ -291,16 +403,16 @@ export default function Preview3DPage() {
       }
       viewerRef.current?.destroy();
       viewerRef.current = null;
-      tilesetRef.current = null;
+      buildingsLayerRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Toggle OSM Buildings ─────────────────────────────────────────────────
   function handleToggleBuildings() {
-    if (!tilesetRef.current) return;
+    if (!buildingsLayerRef.current) return;
     const next = !buildingsVisible;
-    tilesetRef.current.show = next;
+    buildingsLayerRef.current.show = next;
     setBuildingsVisible(next);
   }
 
@@ -414,13 +526,16 @@ export default function Preview3DPage() {
           <button
             disabled={!buildingsReady}
             onClick={handleToggleBuildings}
+            title={buildingsSource ? `Source: ${buildingsSource}` : undefined}
             className={`px-3 py-1.5 backdrop-blur border text-xs rounded transition-colors ${
-              buildingsVisible
+              !buildingsReady
+                ? 'bg-[#1a1d27]/70 border-gray-700 text-gray-600 cursor-wait'
+                : buildingsVisible
                 ? 'bg-blue-600/80 border-blue-500 text-white'
                 : 'bg-[#1a1d27]/90 border-gray-600 text-gray-400 hover:border-gray-400'
             }`}
           >
-            🏢 Budovy
+            🏢 {buildingsLoading ? 'Budovy…' : 'Budovy'}
           </button>
         </div>
       </div>

@@ -379,3 +379,4 @@ Aplikace zobrazí krok za krokem:
 - Small-reserve downloader rejects unsupported countries and preserves existing data if a quadrant fails.
 - Confirmed Ion terrain asset 1 returns 200; buildings asset 96188 returns 404 with server configuration. Credentials are excluded from source control.
 - Final zone refresh: 356 CZ / 208 RS airspaces; 31 CZ / 222 RS protected areas; 2333 CZ small reserves. Recovered 194 degenerate polygons from source geometry; all published polygon rings pass closure/minimum-length checks. Geographic completeness remains limited by existing OSM stitching.
+- 3D buildings now fall back from the Cesium ion global tileset to bounded OpenStreetMap building footprints extruded near the mission. Repeated OSM imagery failures switch the globe to ArcGIS World Imagery, and the buildings toggle works for either source.

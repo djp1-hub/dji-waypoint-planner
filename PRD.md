@@ -378,3 +378,4 @@ Aplikace zobrazí krok za krokem:
 - Airspace downloader accepts process environment, `.env.local`, or `.env`, and preserves existing data on empty/incomplete responses.
 - Small-reserve downloader rejects unsupported countries and preserves existing data if a quadrant fails.
 - Confirmed Ion terrain asset 1 returns 200; buildings asset 96188 returns 404 with server configuration. Credentials are excluded from source control.
+- Final zone refresh: 356 CZ / 208 RS airspaces; 31 CZ / 222 RS protected areas; 2333 CZ small reserves. Recovered 194 degenerate polygons from source geometry; all published polygon rings pass closure/minimum-length checks. Geographic completeness remains limited by existing OSM stitching.

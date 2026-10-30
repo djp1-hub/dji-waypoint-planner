@@ -69,6 +69,7 @@ export default function Preview3DPage() {
   const viewerRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sphereRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tilesetRef = useRef<any>(null);        // OSM Buildings tileset
   // Ref to camera.changed handler so it can be removed in cleanup (prevents stale setHeading calls)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -189,6 +190,7 @@ export default function Preview3DPage() {
         creditContainer.style.opacity = '0.6';
 
         // Optional buildings load in the background; the mission stays usable.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (ION_ENABLED) void Cesium.createOsmBuildingsAsync().then((tileset: any) => {
           if (disposed) { tileset.destroy(); return; }
           viewer.scene.primitives.add(tileset);
@@ -272,7 +274,7 @@ export default function Preview3DPage() {
 
         setMapReady(true);
 
-      } catch (err) {
+      } catch {
         if (disposed) return;
         console.error('[preview-3d] Initialization failed');
         setLoadError(t('preview.loadFailed'));

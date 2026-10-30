@@ -186,6 +186,7 @@ out body geom;`;
     const r = await overpassPostWithFallback(query);
     if (r.status !== 200) throw new Error(`HTTP ${r.status}`);
     const data = JSON.parse(r.body);
+    if (data.remark) throw new Error('Overpass returned an incomplete query result');
     const relations = (data.elements || []).filter((e) => e.type === 'relation');
     console.log(`  ${quadrantLabel}: ${relations.length} relations`);
 

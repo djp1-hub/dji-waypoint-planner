@@ -150,7 +150,7 @@ function simplifyRing(ring, tolerance = 0.001) {
   }
 
   out.push(ring[ring.length - 1]);
-  return out;
+  return out.length >= 4 ? out : ring;
 }
 
 // ── Country-specific classification ──────────────────────────────────────────
@@ -331,6 +331,7 @@ out body geom;`,
       }
 
       const data = JSON.parse(response.body);
+      if (data.remark) throw new Error('Overpass returned an incomplete query result');
       const relations = (data.elements || []).filter((element) => element.type === 'relation');
 
       console.log(`  Found ${relations.length} relations`);
@@ -354,7 +355,7 @@ out body geom;`,
         console.log(`  ✓ ${feature.properties.type}: ${feature.properties.name}`);
       }
     } catch (error) {
-      console.error(`${item.label} query failed:`, error.message);
+      throw new Error(`${item.label} query failed: ${error.message}; existing data preserved`);
     }
   }
 
@@ -391,10 +392,11 @@ out body geom;`,
   const outFile = path.join(outDir, `protected-areas-${COUNTRY.code}.json`);
 
   fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(outFile, JSON.stringify(collection), 'utf-8');
+  fs.writeFileSync(outFile + '.tmp', JSON.stringify(collection), 'utf-8');
+  fs.renameSync(outFile + '.tmp', outFile);
 
   const sizeKb = Math.round(fs.statSync(outFile).size / 1024);
 
   console.log(`\nSaved to: ${outFile} (${sizeKb} KB)`);
   console.log('Done.');
-})();
+})().catch(error => { console.error(error.message); process.exit(1); });

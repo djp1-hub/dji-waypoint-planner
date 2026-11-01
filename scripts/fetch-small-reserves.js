@@ -18,6 +18,10 @@ const fs    = require('fs');
 const path  = require('path');
 const { getCountry } = require('./countries');
 const COUNTRY = getCountry();
+if (COUNTRY.code !== 'cz') {
+  console.error('Small-reserve classifications NPR/NPP/PR/PP support CZ only; use fetch-protected-areas.js rs for Serbia.');
+  process.exit(1);
+}
 
 // CZ split into 4 quadrants to reduce query load
 const CZ_BBOXES = [
@@ -123,7 +127,7 @@ function simplifyRing(ring, tolerance = 0.001) {
     if (Math.sqrt(dx * dx + dy * dy) >= tolerance) out.push(ring[i]);
   }
   out.push(ring[ring.length - 1]);
-  return out;
+  return out.length >= 4 ? out : ring;
 }
 
 // ── Protection title classification ──────────────────────────────────────────
@@ -182,6 +186,7 @@ out body geom;`;
     const r = await overpassPostWithFallback(query);
     if (r.status !== 200) throw new Error(`HTTP ${r.status}`);
     const data = JSON.parse(r.body);
+    if (data.remark) throw new Error('Overpass returned an incomplete query result');
     const relations = (data.elements || []).filter((e) => e.type === 'relation');
     console.log(`  ${quadrantLabel}: ${relations.length} relations`);
 
@@ -197,7 +202,7 @@ out body geom;`;
     }
     console.log(`  ${quadrantLabel}: +${added} features added`);
   } catch (e) {
-    console.error(`  ${quadrantLabel} failed: ${e.message}`);
+    throw new Error(`${quadrantLabel} failed: ${e.message}; existing data preserved`);
   }
 }
 
@@ -236,9 +241,10 @@ out body geom;`;
   const outDir     = path.join(__dirname, '..', 'public', 'data');
   const outFile    = path.join(outDir, `small-reserves-${COUNTRY.code}.json`);
   fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(outFile, JSON.stringify(collection), 'utf-8');
+  fs.writeFileSync(outFile + '.tmp', JSON.stringify(collection), 'utf-8');
+  fs.renameSync(outFile + '.tmp', outFile);
 
   const sizeKb = Math.round(fs.statSync(outFile).size / 1024);
   console.log(`\nSaved to: ${outFile} (${sizeKb} KB)`);
   console.log('Done.');
-})();
+})().catch(error => { console.error(error.message); process.exit(1); });

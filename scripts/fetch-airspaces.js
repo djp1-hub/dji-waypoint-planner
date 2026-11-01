@@ -14,20 +14,18 @@ const { getCountry } = require('./countries');
 const COUNTRY = getCountry();
 const https = require('https');
 
-// ── Read API key from .env.local ──────────────────────────────────────────────
-const envPath = path.join(__dirname, '..', '.env.local');
-let apiKey = null;
-try {
-  const envContent = fs.readFileSync(envPath, 'utf-8');
-  const match = envContent.match(/NEXT_PUBLIC_OPENAIP_API_KEY=(.+)/);
-  if (match) apiKey = match[1].trim();
-} catch {
-  console.error('Could not read .env.local — make sure it exists.');
-  process.exit(1);
+// Read runtime settings without printing credentials.
+let apiKey = process.env.NEXT_PUBLIC_OPENAIP_API_KEY;
+for (const name of ['.env.local', '.env']) {
+  if (apiKey) break;
+  try {
+    const text = fs.readFileSync(path.join(__dirname, '..', name), 'utf8');
+    const match = text.match(/^NEXT_PUBLIC_OPENAIP_API_KEY\s*=\s*(.+)$/m);
+    if (match) apiKey = match[1].trim().replace(/^['"]|['"]$/g, '');
+  } catch {}
 }
-
 if (!apiKey) {
-  console.error('NEXT_PUBLIC_OPENAIP_API_KEY not found in .env.local');
+  console.error('NEXT_PUBLIC_OPENAIP_API_KEY is required');
   process.exit(1);
 }
 
@@ -47,7 +45,7 @@ const req = https.get(url, { headers: { 'x-openaip-api-key': apiKey, 'Accept': '
   res.on('end', () => {
     if (res.statusCode !== 200) {
       console.error(`OpenAIP returned HTTP ${res.statusCode}:`);
-      console.error(rawData.substring(0, 1000));
+
       process.exit(1);
     }
 
@@ -55,21 +53,27 @@ const req = https.get(url, { headers: { 'x-openaip-api-key': apiKey, 'Accept': '
     try {
       parsed = JSON.parse(rawData);
     } catch (e) {
-      console.error('Failed to parse JSON response:', rawData.substring(0, 500));
+      console.error('Invalid JSON response');
       process.exit(1);
     }
 
     const count = parsed.items?.length ?? 0;
     console.log(`Received ${count} airspace zones.`);
     if (parsed.totalCount && parsed.totalCount > 1000) {
-      console.warn(`VAROVÁNÍ: Data zkrácena! Celkem: ${parsed.totalCount}, staženo: ${count}`);
+      console.error('Incomplete response; keeping existing file');
+      process.exit(1);
     }
 
     // ── Save to public/data/ ────────────────────────────────────────────────
     const outDir  = path.join(__dirname, '..', 'public', 'data');
     const outFile = path.join(outDir, `airspaces-${COUNTRY.code}.json`);
     fs.mkdirSync(outDir, { recursive: true });
-    fs.writeFileSync(outFile, JSON.stringify(parsed, null, 2), 'utf-8');
+    if (!count || !parsed.items.every(item => item.geometry?.coordinates)) {
+      console.error('Empty or invalid zones; keeping existing file');
+      process.exit(1);
+    }
+    fs.writeFileSync(outFile + '.tmp', JSON.stringify(parsed, null, 2), 'utf-8');
+    fs.renameSync(outFile + '.tmp', outFile);
     console.log(`Saved to: ${outFile}`);
     console.log(`Done. Commit public/data/airspaces-${COUNTRY.code}.json to include it in the build.`);
   });

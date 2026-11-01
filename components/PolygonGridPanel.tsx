@@ -44,8 +44,8 @@ export default function PolygonGridPanel({
     direction: 0,
     pattern: 'single',
     speed: 5,
-    gimbalPitch: -90,
-    photoMode: 'waypoint',
+    gimbalPitch: -65,
+    photoMode: 'interval',
     photoIntervalSec: 3,
     autoSpeedForInterval: true,
   });

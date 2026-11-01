@@ -34,3 +34,26 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Server review configuration
+
+Keep `.env` out of Git and Docker build context. Docker Compose reads the local
+`.env` and passes `NEXT_PUBLIC_CESIUM_TOKEN`, `NEXT_PUBLIC_MAPY_API_KEY`, and
+`NEXT_PUBLIC_OPENAIP_API_KEY` as explicit build arguments. These `NEXT_PUBLIC_`
+values are visible in the browser bundle: use only appropriately restricted
+client credentials. Rebuild when changing them. Without a Cesium token, preview
+uses OSM imagery and an ellipsoid globe; terrain and buildings are optional.
+
+The 3D preview first requests the global Cesium OSM Buildings tileset. If the
+configured ion token cannot access that asset, the app loads real OpenStreetMap
+building footprints near the mission through `/api/osm-buildings` and extrudes
+them from `height` or `building:levels`. This fallback is limited to a small
+area around the mission. Imagery starts with OpenStreetMap and switches to
+ArcGIS World Imagery after repeated tile failures.
+
+Download zones with `node scripts/fetch-airspaces.js cz` (or `rs`) and
+`node scripts/fetch-protected-areas.js cz` (or `rs`).
+`node scripts/fetch-small-reserves.js cz` supports Czech categories only.
+Downloads go to `public/data/`; inspect counts and all query results before
+publishing. OSM downloads are approximate: existing stitching can drop boundary
+segments and bbox queries include neighbouring countries.

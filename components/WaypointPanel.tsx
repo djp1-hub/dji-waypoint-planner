@@ -25,6 +25,7 @@ const CAMERA_ACTION_LABEL_KEYS: Record<CameraAction, string> = {
   photo: 'camera.photo',
   startVideo: 'camera.startVideo',
   stopVideo: 'camera.stopVideo',
+  startIntervalPhoto: 'camera.startIntervalPhoto',
 };
 
 export default function WaypointPanel({
@@ -141,7 +142,7 @@ export default function WaypointPanel({
               onChange={(e) => onUpdateWaypoint(wp.id, { cameraAction: e.target.value as CameraAction })}
               className="mt-1 bg-[#1a1d27] text-white text-xs rounded px-2 py-1 border border-gray-700 w-full focus:border-blue-500 focus:outline-none"
             >
-              {(Object.keys(CAMERA_ACTION_LABELS) as CameraAction[]).map((action) => (
+              {(Object.keys(CAMERA_ACTION_LABEL_KEYS) as CameraAction[]).map((action) => (
                 <option key={action} value={action}>
                   {t(CAMERA_ACTION_LABEL_KEYS[action])}
                 </option>

@@ -1,0 +1,32 @@
+[
+  {
+    "file": "airspaces-cz.json",
+    "objects": 356,
+    "invalidRings": 0,
+    "sha256": "0eacf5637234961fab1d6775fb351702c89fbda3be8f88cc5ed467dd5c74fed1"
+  },
+  {
+    "file": "airspaces-rs.json",
+    "objects": 208,
+    "invalidRings": 0,
+    "sha256": "c6582f02aa45e3d5c5e18843bc3f3c7681d3d6188a396176e8bdb5fb84ec72f9"
+  },
+  {
+    "file": "protected-areas-cz.json",
+    "objects": 31,
+    "invalidRings": 0,
+    "sha256": "2a324841700c9c28124cf9b0c8f9706a8f0b4480c69f9c40c5a25c99f1ed1d81"
+  },
+  {
+    "file": "protected-areas-rs.json",
+    "objects": 222,
+    "invalidRings": 0,
+    "sha256": "12651509b0f0e97ae89678dedd9f001f84a3408b1d2b11ddfb840619d5f86bc4"
+  },
+  {
+    "file": "small-reserves-cz.json",
+    "objects": 2333,
+    "invalidRings": 0,
+    "sha256": "7968043c0d202f190572f619629bda2cc6210ef56202cb53cd23e892ebc34a6a"
+  }
+]

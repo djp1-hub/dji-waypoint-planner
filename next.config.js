@@ -11,8 +11,9 @@ const nextConfig = {
   // turbopack: {} aktivuje Turbopack (Next.js 15+).
   // next-pwa přidá webpack config která má přednost.
   turbopack: {},
+  output: 'standalone',
   // No transpilePackages needed — Cesium is loaded via CDN script tag
   allowedDevOrigins: ['192.168.0.12'],
 };
 
-module.exports = withPWA(nextConfig);
+module.exports = nextConfig; // <--- Исправлено с nextconfig на nextConfig[cite: 13]

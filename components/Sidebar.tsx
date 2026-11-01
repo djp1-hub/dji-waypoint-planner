@@ -6,25 +6,12 @@ import Link from 'next/link';
 import SearchBar from './SearchBar';
 import TerrainFollowingButton from './TerrainFollowingButton';
 import WaypointPanel from './WaypointPanel';
-import SpiralPanel from './SpiralPanel';
-import GridPanel from './GridPanel';
 import PolygonGridPanel from './PolygonGridPanel';
-import OrbitPanel from './OrbitPanel';
 import FacadePanel from './FacadePanel';
-import DroniePanel from './film/DroniePanel';
-import RevealPanel from './film/RevealPanel';
-import TopDownPanel from './film/TopDownPanel';
-import CraneUpPanel from './film/CraneUpPanel';
-import HyperlapsePanel from './film/HyperlapsePanel';
-import ArcShotPanel from './film/ArcShotPanel';
-import BoomerangPanel from './film/BoomerangPanel';
-import RocketPanel from './film/RocketPanel';
-import PoiSequencePanel from './film/PoiSequencePanel';
 import { Waypoint, MissionType, Drone } from '@/lib/types';
 import ActiveProfileBadge from './ActiveProfileBadge';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from '@/lib/languageContext';
-import { FilmType } from '@/app/page';
 import { estimateBattery } from '@/lib/batteryEstimate';
 import { Collision, highestSeverity, groupCollisionsByZone } from '@/lib/collisionDetection';
 import { DataRegion } from '@/lib/dataRegion';
@@ -33,108 +20,31 @@ import CollisionPanel from './CollisionPanel';
 
 const PHOTO_TABS: { type: MissionType; labelKey: string }[] = [
   { type: 'waypoints', labelKey: 'mission.waypoints' },
-  { type: 'spiral', labelKey: 'mission.spiral' },
-  { type: 'grid', labelKey: 'mission.grid' },
   { type: 'polygonGrid', labelKey: 'mission.polygonGrid' },
-  { type: 'orbit', labelKey: 'mission.orbit' },
   { type: 'facade', labelKey: 'mission.facade' },
-];
-
-const FILM_TABS: { type: FilmType; labelKey: string }[] = [
-  { type: 'dronie',      labelKey: 'film.dronie'     },
-  { type: 'reveal',      labelKey: 'film.reveal'     },
-  { type: 'topdown',     labelKey: 'film.topdown'   },
-  { type: 'craneup',     labelKey: 'film.craneup'   },
-  { type: 'hyperlapse',  labelKey: 'film.hyperlapse' },
-  { type: 'arcshot',     labelKey: 'film.arcshot'   },
-  { type: 'boomerang',   labelKey: 'film.boomerang'  },
-  { type: 'rocket',      labelKey: 'film.rocket'     },
-  { type: 'poisequence', labelKey: 'film.poisequence'    },
 ];
 
 interface SidebarProps {
   waypoints: Waypoint[];
   missionType: MissionType;
   onMissionTypeChange: (type: MissionType) => void;
-  // App mode (photo vs. film)
-  appMode: 'photo' | 'film';
-  onAppModeChange: (mode: 'photo' | 'film') => void;
-  filmType: FilmType;
-  onFilmTypeChange: (type: FilmType) => void;
   // Waypoints panel
   onUpdateWaypoint: (id: string, updates: Partial<Waypoint>) => void;
   onDeleteWaypoint: (id: string) => void;
   onClearAll: () => void;
   // Generated mission panels
   onSetWaypoints: (waypoints: Waypoint[]) => void;
-  // Spiral
-  mapCenter: { lat: number; lng: number };
-  // Grid
-  gridCorners: { sw: [number, number]; ne: [number, number] } | null;
-  gridDrawStep: 'idle' | 'sw' | 'ne';
-  onStartDrawGrid: () => void;
   polygonPoints: { lat: number; lng: number }[];
   polygonDrawActive: boolean;
   onStartDrawPolygon: () => void;
   onFinishDrawPolygon: () => void;
   onClearPolygon: () => void;
-  // Orbit
-  poi: { lat: number; lng: number } | null;
-  isSelectingPoi: boolean;
-  onSelectPoi: () => void;
-  onSetPoi: (poi: { lat: number; lng: number }) => void;
   // Facade
   facadePoints: { a: { lat: number; lng: number }; b: { lat: number; lng: number } } | null;
   facadeDrawStep: 'idle' | 'a' | 'b';
   onStartDrawFacade: () => void;
   facadeMode: 'single' | '360';
   onFacadeModeChange: (mode: 'single' | '360') => void;
-  // Film — Dronie
-  dronieStart: { lat: number; lng: number } | null;
-  isSelectingDronieStart: boolean;
-  onSelectDronieStart: () => void;
-  // Film — Reveal
-  revealPoi: { lat: number; lng: number } | null;
-  revealStart: { lat: number; lng: number } | null;
-  isSelectingRevealPoi: boolean;
-  isSelectingRevealStart: boolean;
-  onSelectRevealPoi: () => void;
-  onSelectRevealStart: () => void;
-  // Film — Top-down
-  topDownStart: { lat: number; lng: number } | null;
-  topDownEnd: { lat: number; lng: number } | null;
-  isSelectingTopDownStart: boolean;
-  isSelectingTopDownEnd: boolean;
-  onSelectTopDownStart: () => void;
-  onSelectTopDownEnd: () => void;
-  // Film — Crane Up
-  craneUpPos: { lat: number; lng: number } | null;
-  isSelectingCraneUpPos: boolean;
-  onSelectCraneUpPos: () => void;
-  // Film — Hyperlapse
-  hyperlapseStart: { lat: number; lng: number } | null;
-  hyperlapseEnd: { lat: number; lng: number } | null;
-  hyperlapseSelectStep: 'idle' | 'start' | 'end';
-  onSelectHyperlapseStart: () => void;
-  onSelectHyperlapseEnd: () => void;
-  // Film — Arc Shot
-  arcShotPoi: { lat: number; lng: number } | null;
-  isSelectingArcShotPoi: boolean;
-  onSelectArcShotPoi: () => void;
-  // Film — Boomerang
-  boomerangStart: { lat: number; lng: number } | null;
-  boomerangEnd: { lat: number; lng: number } | null;
-  boomerangSelectStep: 'idle' | 'start' | 'end';
-  onSelectBoomerangStart: () => void;
-  onSelectBoomerangEnd: () => void;
-  // Film — Rocket
-  rocketPos: { lat: number; lng: number } | null;
-  isSelectingRocket: boolean;
-  onSelectRocket: () => void;
-  // Film — POI Sequence
-  poiSeqPoi: { lat: number; lng: number } | null;
-  isSelectingPoiSeq: boolean;
-  onSelectPoiSeq: () => void;
   // Terrain Following
   terrainActive: boolean;
   onTerrainApply: (adjusted: import('@/lib/types').Waypoint[]) => void;
@@ -179,7 +89,6 @@ interface SidebarProps {
 }
 
 /** Reusable tab strip — renders a row of toggle buttons with a shared active color. */
-/** Reusable tab strip — renders a row of toggle buttons with a shared active color. */
 function TabGroup<T extends string>({
   tabs,
   activeTab,
@@ -216,69 +125,20 @@ export default function Sidebar({
   waypoints,
   missionType,
   onMissionTypeChange,
-  appMode,
-  onAppModeChange,
-  filmType,
-  onFilmTypeChange,
   onUpdateWaypoint,
   onDeleteWaypoint,
   onClearAll,
   onSetWaypoints,
-  mapCenter,
-  gridCorners,
-  gridDrawStep,
-  onStartDrawGrid,
   polygonPoints,
   polygonDrawActive,
   onStartDrawPolygon,
   onFinishDrawPolygon,
   onClearPolygon,
-  poi,
-  isSelectingPoi,
-  onSelectPoi,
-  onSetPoi,
   facadePoints,
   facadeDrawStep,
   onStartDrawFacade,
   facadeMode,
   onFacadeModeChange,
-  dronieStart,
-  isSelectingDronieStart,
-  onSelectDronieStart,
-  revealPoi,
-  revealStart,
-  isSelectingRevealPoi,
-  isSelectingRevealStart,
-  onSelectRevealPoi,
-  onSelectRevealStart,
-  topDownStart,
-  topDownEnd,
-  isSelectingTopDownStart,
-  isSelectingTopDownEnd,
-  onSelectTopDownStart,
-  onSelectTopDownEnd,
-  craneUpPos,
-  isSelectingCraneUpPos,
-  onSelectCraneUpPos,
-  hyperlapseStart,
-  hyperlapseEnd,
-  hyperlapseSelectStep,
-  onSelectHyperlapseStart,
-  onSelectHyperlapseEnd,
-  arcShotPoi,
-  isSelectingArcShotPoi,
-  onSelectArcShotPoi,
-  boomerangStart,
-  boomerangEnd,
-  boomerangSelectStep,
-  onSelectBoomerangStart,
-  onSelectBoomerangEnd,
-  rocketPos,
-  isSelectingRocket,
-  onSelectRocket,
-  poiSeqPoi,
-  isSelectingPoiSeq,
-  onSelectPoiSeq,
   terrainActive,
   onTerrainApply,
   onTerrainReset,
@@ -363,57 +223,20 @@ export default function Sidebar({
         <ActiveProfileBadge />
       </div>
 
-      {/* Mode switcher: Fotogrammetrie / Film */}
-      <div className="px-3 pt-3 flex-shrink-0">
-        <div className="flex rounded overflow-hidden border border-gray-700">
-          <button
-            onClick={() => onAppModeChange('photo')}
-            className={`flex-1 py-1.5 text-xs font-medium transition-colors ${
-              appMode === 'photo'
-                ? 'bg-blue-600 text-white'
-                : 'bg-[#0f1117] text-gray-400 hover:text-white'
-            }`}
-          >
-            {t('tab.photo')}
-          </button>
-          <button
-            onClick={() => onAppModeChange('film')}
-            className={`flex-1 py-1.5 text-xs font-medium transition-colors ${
-              appMode === 'film'
-                ? 'bg-purple-600 text-white'
-                : 'bg-[#0f1117] text-gray-400 hover:text-white'
-            }`}
-          >
-            {t('tab.film')}
-          </button>
-        </div>
-      </div>
-
-      {/* Mission type tabs — switches based on app mode */}
+      {/* Available mission types */}
       <div className="px-2 pt-2 flex-shrink-0">
-        {appMode === 'photo' ? (
-  <TabGroup
-    tabs={PHOTO_TABS}
-    activeTab={missionType}
-    onSelect={onMissionTypeChange}
-    activeColor="bg-blue-600"
-    t={t}
-  />
-) : (
-  <TabGroup
-    tabs={FILM_TABS}
-    activeTab={filmType}
-    onSelect={onFilmTypeChange}
-    activeColor="bg-purple-600"
-    t={t}
-  />
-)}
+        <TabGroup
+          tabs={PHOTO_TABS}
+          activeTab={missionType}
+          onSelect={onMissionTypeChange}
+          activeColor="bg-blue-600"
+          t={t}
+        />
       </div>
 
       {/* Panel content */}
       <div className="px-3 py-3 flex-shrink-0">
-        {/* ── Photo mode panels ── */}
-        {appMode === 'photo' && missionType === 'waypoints' && (
+        {missionType === 'waypoints' && (
           <WaypointPanel
             waypoints={waypoints}
             onUpdateWaypoint={onUpdateWaypoint}
@@ -423,14 +246,7 @@ export default function Sidebar({
           />
         )}
 
-        {appMode === 'photo' && missionType === 'spiral' && (
-          <SpiralPanel
-            mapCenter={mapCenter}
-            onGenerate={onSetWaypoints}
-          />
-        )}
-
-        {appMode === 'photo' && missionType === 'polygonGrid' && (
+        {missionType === 'polygonGrid' && (
           <PolygonGridPanel
             polygonPoints={polygonPoints}
             polygonDrawActive={polygonDrawActive}
@@ -441,19 +257,7 @@ export default function Sidebar({
           />
         )}
 
-        {appMode === 'photo' && missionType === 'orbit' && (
-          <OrbitPanel
-            poi={poi}
-            isSelectingPoi={isSelectingPoi}
-            onSelectPoi={onSelectPoi}
-            onGenerate={(wps, p) => {
-              onSetWaypoints(wps);
-              onSetPoi(p);
-            }}
-          />
-        )}
-
-        {appMode === 'photo' && missionType === 'facade' && (
+        {missionType === 'facade' && (
           <FacadePanel
             facadePoints={facadePoints}
             drawStep={facadeDrawStep}
@@ -465,97 +269,6 @@ export default function Sidebar({
           />
         )}
 
-        {/* ── Film mode panels ── */}
-        {appMode === 'film' && filmType === 'dronie' && (
-          <DroniePanel
-            startPos={dronieStart}
-            isSelectingStart={isSelectingDronieStart}
-            onSelectStart={onSelectDronieStart}
-            onGenerate={onSetWaypoints}
-          />
-        )}
-
-        {appMode === 'film' && filmType === 'reveal' && (
-          <RevealPanel
-            poi={revealPoi}
-            startPos={revealStart}
-            isSelectingPoi={isSelectingRevealPoi}
-            isSelectingStart={isSelectingRevealStart}
-            onSelectPoi={onSelectRevealPoi}
-            onSelectStart={onSelectRevealStart}
-            onGenerate={onSetWaypoints}
-          />
-        )}
-
-        {appMode === 'film' && filmType === 'topdown' && (
-          <TopDownPanel
-            startPos={topDownStart}
-            endPos={topDownEnd}
-            isSelectingStart={isSelectingTopDownStart}
-            isSelectingEnd={isSelectingTopDownEnd}
-            onSelectStart={onSelectTopDownStart}
-            onSelectEnd={onSelectTopDownEnd}
-            onGenerate={onSetWaypoints}
-          />
-        )}
-
-        {appMode === 'film' && filmType === 'craneup' && (
-          <CraneUpPanel
-            pos={craneUpPos}
-            isSelectingPos={isSelectingCraneUpPos}
-            onSelectPos={onSelectCraneUpPos}
-            onGenerate={onSetWaypoints}
-          />
-        )}
-
-        {appMode === 'film' && filmType === 'hyperlapse' && (
-          <HyperlapsePanel
-            startPos={hyperlapseStart}
-            endPos={hyperlapseEnd}
-            selectStep={hyperlapseSelectStep}
-            onSelectStart={onSelectHyperlapseStart}
-            onSelectEnd={onSelectHyperlapseEnd}
-            onGenerate={onSetWaypoints}
-          />
-        )}
-
-        {appMode === 'film' && filmType === 'arcshot' && (
-          <ArcShotPanel
-            poi={arcShotPoi}
-            isSelectingPoi={isSelectingArcShotPoi}
-            onSelectPoi={onSelectArcShotPoi}
-            onGenerate={onSetWaypoints}
-          />
-        )}
-
-        {appMode === 'film' && filmType === 'boomerang' && (
-          <BoomerangPanel
-            start={boomerangStart}
-            end={boomerangEnd}
-            selectStep={boomerangSelectStep}
-            onSelectStart={onSelectBoomerangStart}
-            onSelectEnd={onSelectBoomerangEnd}
-            onGenerate={onSetWaypoints}
-          />
-        )}
-
-        {appMode === 'film' && filmType === 'rocket' && (
-          <RocketPanel
-            pos={rocketPos}
-            isSelectingPos={isSelectingRocket}
-            onSelectPos={onSelectRocket}
-            onGenerate={onSetWaypoints}
-          />
-        )}
-
-        {appMode === 'film' && filmType === 'poisequence' && (
-          <PoiSequencePanel
-            poi={poiSeqPoi}
-            isSelectingPoi={isSelectingPoiSeq}
-            onSelectPoi={onSelectPoiSeq}
-            onGenerate={onSetWaypoints}
-          />
-        )}
       </div>
 
       {/* Terrain Following + 3D Preview — shown only when there are waypoints */}
